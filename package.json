@@ -1,0 +1,21 @@
+{
+  "name": "hubspot-property-sync-app",
+  "version": "1.0.0",
+  "description": "HubSpot Public App — bidirectional property sync workflow action",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "register-action": "node scripts/registerAction.js"
+  },
+  "dependencies": {
+    "@hubspot/api-client": "^11.0.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
