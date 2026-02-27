@@ -5,7 +5,7 @@ const tokenStore = require('./tokenStore');
 
 const CLIENT_ID     = process.env.HUBSPOT_CLIENT_ID;
 const CLIENT_SECRET = process.env.HUBSPOT_CLIENT_SECRET;
-const REDIRECT_URI  = `${process.env.APP_BASE_URL}/oauth/callback`;
+const REDIRECT_URI = `${process.env.APP_BASE_URL}/oauth/callback`;
 
 // These scopes must exactly match what is set in your HubSpot app Auth tab
 const SCOPES = [
