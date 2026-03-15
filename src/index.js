@@ -4,7 +4,7 @@ const express = require('express');
 const path    = require('path');
 const app     = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -13,6 +13,7 @@ app.use('/oauth',    require('./routes/oauth'));
 app.use('/action',   require('./routes/action'));
 app.use('/settings', require('./routes/settings'));
 app.use('/crm-card', require('./routes/crmcard'));
+app.use('/webhooks', require('./routes/webhooks'));
 
 // Root landing page
 app.get('/', (req, res) => {
@@ -45,7 +46,7 @@ const BASE  = process.env.APP_BASE_URL || 'http://localhost:' + PORT;
 
 app.listen(PORT, () => {
   console.log(`🚀  PropBridge running on port ${PORT}`);
-  console.log(`    Install URL:  ${BASE}/oauth/install`);
-  console.log(`    Settings URL: ${BASE}/settings`);
-  console.log(`    CRM Card URL: ${BASE}/crm-card`);
+  console.log(`    Install URL:   ${BASE}/oauth/install`);
+  console.log(`    Settings URL:  ${BASE}/settings`);
+  console.log(`    Webhook URL:   ${BASE}/webhooks/receive`);
 });
