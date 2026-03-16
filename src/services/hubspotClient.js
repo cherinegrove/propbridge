@@ -5,9 +5,8 @@ const tokenStore = require('./tokenStore');
 
 const CLIENT_ID     = process.env.HUBSPOT_CLIENT_ID;
 const CLIENT_SECRET = process.env.HUBSPOT_CLIENT_SECRET;
-const REDIRECT_URI = `${process.env.APP_BASE_URL}/oauth/callback`;
+const REDIRECT_URI  = `${process.env.APP_BASE_URL}/oauth/callback`;
 
-// These scopes must exactly match what is set in your HubSpot app Auth tab
 const SCOPES = [
   'automation',
   'crm.objects.companies.read',
@@ -52,7 +51,7 @@ async function exchangeCode(code) {
 }
 
 async function refreshToken(portalId) {
-  const stored = tokenStore.get(portalId);
+  const stored = await tokenStore.get(portalId);
   if (!stored) throw new Error(`No tokens found for portal ${portalId}`);
 
   const { data } = await axios.post(
@@ -67,12 +66,12 @@ async function refreshToken(portalId) {
   );
 
   const updated = { ...stored, ...data, savedAt: Date.now() };
-  tokenStore.set(portalId, updated);
+  await tokenStore.set(portalId, updated);
   return updated;
 }
 
 async function getClient(portalId) {
-  let tokens = tokenStore.get(portalId);
+  let tokens = await tokenStore.get(portalId);
   if (!tokens) throw new Error(`Portal ${portalId} not installed`);
 
   const expiresAt = tokens.savedAt + (tokens.expires_in - 300) * 1000;
