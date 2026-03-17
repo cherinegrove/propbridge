@@ -49,7 +49,7 @@ async function exchangeCode(code) {
   console.log('[OAuth] Exchanging code with redirect_uri:', REDIRECT_URI);
   try {
     const { data } = await axios.post(
-      'https://api.hubapi.com/oauth/v1/token',
+      'https://api-eu1.hubapi.com/oauth/v1/token',
       payload,
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
     );
@@ -65,7 +65,7 @@ async function refreshToken(portalId) {
   if (!stored) throw new Error(`No tokens found for portal ${portalId}`);
 
   const { data } = await axios.post(
-    'https://api.hubapi.com/oauth/v1/token',
+    'https://api-eu1.hubapi.com/oauth/v1/token',
     new URLSearchParams({
       grant_type:    'refresh_token',
       client_id:     CLIENT_ID,
