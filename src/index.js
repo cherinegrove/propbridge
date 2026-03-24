@@ -14,6 +14,7 @@ app.use('/action',   require('./routes/action'));
 app.use('/settings', require('./routes/settings'));
 app.use('/crm-card', require('./routes/crmcard'));
 app.use('/webhooks', require('./routes/webhooks'));
+app.use('/admin',    require('./routes/admin'));
 
 // Root landing page
 app.get('/', (req, res) => {
@@ -49,4 +50,5 @@ app.listen(PORT, () => {
   console.log(`    Install URL:   ${BASE}/oauth/install`);
   console.log(`    Settings URL:  ${BASE}/settings`);
   console.log(`    Webhook URL:   ${BASE}/webhooks/receive`);
+  console.log(`    Admin URL:     ${BASE}/admin`);
 });
