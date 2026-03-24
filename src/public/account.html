@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PropBridge — Account</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f11;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: #2e2e38;
+    --accent: #ff6b35;
+    --accent2: #ffb347;
+    --text: #f0f0f4;
+    --muted: #8888a0;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --error: #f87171;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo { display: flex; align-items: center; gap: 12px; font-family: 'DM Mono', monospace; font-size: 18px; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .nav-links { display: flex; gap: 24px; }
+  .nav-links a { color: var(--muted); text-decoration: none; font-size: 14px; transition: color 0.15s; }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+  .main { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .page-title { font-size: 28px; font-weight: 600; margin-bottom: 6px; }
+  .page-subtitle { color: var(--muted); font-size: 15px; margin-bottom: 36px; }
+
+  /* Current plan card */
+  .plan-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .plan-card.trial { border-left: 3px solid var(--warning); }
+  .plan-card.starter { border-left: 3px solid var(--success); }
+  .plan-card.growth { border-left: 3px solid #60a5fa; }
+  .plan-card.pro { border-left: 3px solid #a78bfa; }
+  .plan-card.business { border-left: 3px solid var(--accent); }
+  .plan-card.expired { border-left: 3px solid var(--error); }
+
+  .plan-name { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .plan-desc { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+
+  .usage-bars { display: flex; flex-direction: column; gap: 12px; }
+  .usage-item label { font-size: 12px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .progress { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.5s; }
+  .progress-fill.warning { background: var(--warning); }
+  .progress-fill.danger { background: var(--error); }
+
+  .plan-price { text-align: right; }
+  .price-amount { font-family: 'DM Mono', monospace; font-size: 42px; font-weight: 500; color: var(--accent); line-height: 1; }
+  .price-period { font-size: 13px; color: var(--muted); }
+
+  .trial-banner {
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .trial-text { font-size: 14px; color: var(--warning); }
+  .trial-days { font-family: 'DM Mono', monospace; font-weight: 500; }
+
+  .expired-banner {
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin-bottom: 32px;
+    font-size: 14px;
+    color: var(--error);
+  }
+
+  /* Pricing tiers */
+  .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
+
+  .tiers-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
+
+  .tier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+
+  .tier-card:hover { border-color: #44445a; }
+  .tier-card.current { border-color: var(--accent); }
+  .tier-card.popular { border-color: #60a5fa; }
+
+  .popular-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #60a5fa;
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .current-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .tier-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .tier-price { font-family: 'DM Mono', monospace; font-size: 32px; font-weight: 500; color: var(--accent); margin-bottom: 4px; }
+  .tier-period { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+  .tier-features { list-style: none; margin-bottom: 20px; }
+  .tier-features li { font-size: 13px; color: var(--muted); padding: 4px 0; display: flex; align-items: center; gap: 8px; }
+  .tier-features li::before { content: '✓'; color: var(--success); font-weight: 600; }
+
+  .btn-upgrade {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-upgrade.primary { background: var(--accent); color: white; }
+  .btn-upgrade.primary:hover { background: #ff8555; }
+  .btn-upgrade.current-plan { background: var(--surface2); color: var(--muted); cursor: default; border: 1px solid var(--border); }
+
+  /* Upgrade form modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 480px; padding: 32px; }
+  .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .modal-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  input, textarea, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    width: 100%;
+  }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn { padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; }
+  .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #ff8555; }
+
+  .success-state { text-align: center; padding: 20px 0; }
+  .success-icon { font-size: 48px; margin-bottom: 16px; }
+  .success-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .success-desc { color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⇄</div>
+    PropBridge
+  </div>
+  <nav class="nav-links">
+    <a href="#" onclick="goSettings()">Sync Rules</a>
+    <a href="#" class="active">Account</a>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="page-title">Account & Billing</div>
+  <div class="page-subtitle">Manage your PropBridge subscription.</div>
+
+  <div id="trialBanner" style="display:none"></div>
+  <div id="expiredBanner" style="display:none"></div>
+
+  <div class="plan-card" id="planCard">
+    <div>
+      <div class="plan-name" id="planName">Loading...</div>
+      <div class="plan-desc" id="planDesc"></div>
+      <div class="usage-bars" id="usageBars"></div>
+    </div>
+    <div class="plan-price">
+      <div class="price-amount" id="planPrice">—</div>
+      <div class="price-period">per month</div>
+    </div>
+  </div>
+
+  <div class="section-title">Choose a Plan</div>
+
+  <div class="tiers-grid" id="tiersGrid"></div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div id="modalContent">
+      <div class="modal-title" id="modalTitle">Upgrade to Growth</div>
+      <div class="modal-subtitle">Fill in your details and we'll get you set up within 24 hours.</div>
+
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="contactName" placeholder="Jane Smith">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="contactEmail" placeholder="jane@company.com">
+      </div>
+      <div class="form-group">
+        <label>Requested Plan</label>
+        <input type="text" id="requestedPlan" readonly style="color:var(--muted)">
+      </div>
+      <div class="form-group">
+        <label>Message (optional)</label>
+        <textarea id="contactMessage" rows="3" placeholder="Any questions or special requirements..."></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitUpgrade()">Send Request</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const urlParams  = new URLSearchParams(window.location.search);
+  const portalId   = urlParams.get('portalId');
+
+  const TIERS = {
+    trial:    { name: 'Free Trial',  price: 0,  maxRules: 10,  maxMappings: 10,  desc: '14-day free trial' },
+    starter:  { name: 'Starter',     price: 7,  maxRules: 10,  maxMappings: 10,  desc: 'Perfect for small teams' },
+    growth:   { name: 'Growth',      price: 12, maxRules: 30,  maxMappings: 30,  desc: 'For growing businesses' },
+    pro:      { name: 'Pro',         price: 16, maxRules: 50,  maxMappings: 50,  desc: 'For power users' },
+    business: { name: 'Business',    price: 25, maxRules: 100, maxMappings: 100, desc: 'For agencies & enterprise' }
+  };
+
+  function goSettings() {
+    window.location.href = '/settings?portalId=' + portalId;
+  }
+
+  async function load() {
+    try {
+      const [tierRes, rulesRes] = await Promise.all([
+        fetch('/account/tier?portalId=' + portalId).then(r => r.json()),
+        fetch('/settings/rules?portalId=' + portalId).then(r => r.json())
+      ]);
+
+      const tier      = tierRes.tier || 'trial';
+      const tierInfo  = TIERS[tier] || TIERS.trial;
+      const rules     = rulesRes.rules || [];
+      const isExpired = tierRes.isExpired;
+      const trialDays = tierRes.trialDaysLeft;
+
+      // Plan card
+      const planCard = document.getElementById('planCard');
+      planCard.className = 'plan-card ' + (isExpired ? 'expired' : tier);
+
+      document.getElementById('planName').textContent = isExpired ? 'Trial Expired' : tierInfo.name;
+      document.getElementById('planDesc').textContent = tierInfo.desc;
+      document.getElementById('planPrice').textContent = tier === 'trial' ? 'Free' : '$' + tierInfo.price;
+
+      // Usage bars
+      const totalMappings = rules.reduce((sum, r) => sum + (r.mappings?.length || 0), 0);
+      const rulesUsed     = rules.length;
+      const rulesPct      = Math.min(100, (rulesUsed / tierInfo.maxRules) * 100);
+      const mappingsPct   = Math.min(100, (totalMappings / tierInfo.maxMappings) * 100);
+
+      document.getElementById('usageBars').innerHTML = `
+        <div class="usage-item">
+          <label><span>Sync Rules</span><span>${rulesUsed} / ${tierInfo.maxRules}</span></label>
+          <div class="progress"><div class="progress-fill ${rulesPct > 80 ? (rulesPct >= 100 ? 'danger' : 'warning') : ''}" style="width:${rulesPct}%"></div></div>
+        </div>
+        <div class="usage-item">
+          <label><span>Property Mappings</span><span>${totalMappings} / ${tierInfo.maxMappings}</span></label>
+          <div class="progress"><div class="progress-fill ${mappingsPct > 80 ? (mappingsPct >= 100 ? 'danger' : 'warning') : ''}" style="width:${mappingsPct}%"></div></div>
+        </div>
+      `;
+
+      // Trial banner
+      if (tier === 'trial' && !isExpired) {
+        const banner = document.getElementById('trialBanner');
+        banner.style.display = 'flex';
+        banner.innerHTML = `
+          <div class="trial-banner">
+            <div class="trial-text">🎉 You're on a free trial — <span class="trial-days">${Math.ceil(trialDays)} days remaining</span></div>
+            <div style="font-size:13px;color:var(--muted)">Upgrade anytime to keep your sync rules active</div>
+          </div>
+        `;
+      }
+
+      if (isExpired) {
+        document.getElementById('expiredBanner').style.display = 'block';
+        document.getElementById('expiredBanner').innerHTML = `
+          <div class="expired-banner">
+            ⚠️ Your free trial has expired. Your sync rules are paused. Please upgrade to reactivate PropBridge.
+          </div>
+        `;
+      }
+
+      // Render tier cards
+      const tiersGrid = document.getElementById('tiersGrid');
+      const tierOrder = ['starter', 'growth', 'pro', 'business'];
+      tiersGrid.innerHTML = tierOrder.map(t => {
+        const info      = TIERS[t];
+        const isCurrent = tier === t || (tier === 'trial' && t === 'starter');
+        const isPopular = t === 'growth';
+        return `
+          <div class="tier-card ${isCurrent ? 'current' : ''} ${isPopular && !isCurrent ? 'popular' : ''}">
+            ${isCurrent ? '<div class="current-badge">Current Plan</div>' : ''}
+            ${isPopular && !isCurrent ? '<div class="popular-badge">Most Popular</div>' : ''}
+            <div class="tier-name">${info.name}</div>
+            <div class="tier-price">$${info.price}</div>
+            <div class="tier-period">per month</div>
+            <ul class="tier-features">
+              <li>${info.maxRules} sync rules</li>
+              <li>${info.maxMappings} mappings per rule</li>
+              <li>Real-time webhook sync</li>
+              <li>All object types</li>
+            </ul>
+            <button class="btn-upgrade ${isCurrent ? 'current-plan' : 'primary'}" 
+              onclick="${isCurrent ? '' : `openUpgrade('${t}', '${info.name}', ${info.price})`}">
+              ${isCurrent ? 'Current Plan' : 'Upgrade'}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+    } catch (err) {
+      console.error('Load error:', err);
+    }
+  }
+
+  let selectedTier = '';
+
+  function openUpgrade(tier, name, price) {
+    selectedTier = tier;
+    document.getElementById('modalTitle').textContent = `Upgrade to ${name} — $${price}/mo`;
+    document.getElementById('requestedPlan').value = `${name} ($${price}/month)`;
+    document.getElementById('modalContent').innerHTML = document.getElementById('modalContent').innerHTML;
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+
+  async function submitUpgrade() {
+    const name    = document.getElementById('contactName').value.trim();
+    const email   = document.getElementById('contactEmail').value.trim();
+    const message = document.getElementById('contactMessage').value.trim();
+
+    if (!name || !email) {
+      alert('Please fill in your name and email.');
+      return;
+    }
+
+    await fetch('/account/upgrade-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portalId, tier: selectedTier, name, email, message })
+    });
+
+    document.getElementById('modalContent').innerHTML = `
+      <div class="success-state">
+        <div class="success-icon">✅</div>
+        <div class="success-title">Request Sent!</div>
+        <div class="success-desc">We'll be in touch within 24 hours to get you set up on your new plan.</div>
+        <br>
+        <button class="btn btn-primary" onclick="closeModal()" style="margin-top:16px">Close</button>
+      </div>
+    `;
+  }
+
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  load();
+</script>
+</body>
+</html>
