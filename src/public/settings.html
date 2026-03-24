@@ -27,10 +27,8 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding: 0;
   }
 
-  /* Header */
   .header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -42,6 +40,7 @@
     position: sticky;
     top: 0;
     z-index: 100;
+    isolation: isolate;
   }
 
   .logo {
@@ -52,6 +51,7 @@
     font-weight: 500;
     font-size: 18px;
     letter-spacing: -0.5px;
+    flex: 1;
   }
 
   .logo-icon {
@@ -65,6 +65,37 @@
     font-size: 16px;
   }
 
+  .header-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .header-nav a {
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 7px 20px;
+    border-radius: 6px;
+    transition: all 0.15s;
+    color: var(--muted);
+  }
+
+  .header-nav a.active {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .header-nav a:hover {
+    color: var(--text);
+  }
+
   .portal-badge {
     font-family: 'DM Mono', monospace;
     font-size: 12px;
@@ -73,9 +104,10 @@
     padding: 4px 10px;
     border-radius: 20px;
     border: 1px solid var(--border);
+    flex: 1;
+    text-align: right;
   }
 
-  /* Main layout */
   .main {
     max-width: 900px;
     margin: 0 auto;
@@ -95,7 +127,6 @@
     margin-bottom: 36px;
   }
 
-  /* Rule cards */
   .rules-list {
     display: flex;
     flex-direction: column;
@@ -112,7 +143,6 @@
   }
 
   .rule-card:hover { border-color: #44445a; }
-
   .rule-card.active { border-left: 3px solid var(--accent); }
 
   .rule-header {
@@ -120,7 +150,6 @@
     align-items: center;
     padding: 16px 20px;
     gap: 14px;
-    cursor: pointer;
   }
 
   .rule-toggle {
@@ -181,10 +210,7 @@
     border: 1px solid var(--border);
   }
 
-  .rule-actions {
-    display: flex;
-    gap: 8px;
-  }
+  .rule-actions { display: flex; gap: 8px; }
 
   .btn-icon {
     width: 32px;
@@ -204,7 +230,6 @@
   .btn-icon:hover { background: var(--surface2); color: var(--text); }
   .btn-icon.delete:hover { background: #3d1414; color: var(--error); border-color: var(--error); }
 
-  /* Mapping pills */
   .rule-mappings {
     padding: 0 20px 16px 74px;
     display: flex;
@@ -227,7 +252,6 @@
 
   .mapping-pill .arrow { color: var(--accent); }
 
-  /* Add rule button */
   .btn-add {
     width: 100%;
     padding: 14px;
@@ -251,7 +275,6 @@
     background: rgba(255,107,53,0.04);
   }
 
-  /* Modal */
   .modal-overlay {
     position: fixed;
     inset: 0;
@@ -323,7 +346,12 @@
     -webkit-appearance: none;
   }
 
-  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
 
   select:focus, input[type="text"]:focus {
     outline: none;
@@ -332,7 +360,6 @@
 
   select option { background: var(--surface2); }
 
-  /* Mappings section */
   .mappings-section { margin-bottom: 24px; }
 
   .mappings-title {
@@ -401,7 +428,6 @@
 
   .btn-add-mapping:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Modal footer */
   .modal-footer {
     display: flex;
     gap: 10px;
@@ -437,7 +463,6 @@
 
   .btn-primary:hover { background: #ff8555; }
 
-  /* Empty state */
   .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -448,7 +473,6 @@
   .empty-title { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
   .empty-desc { font-size: 14px; line-height: 1.6; }
 
-  /* Toast */
   .toast {
     position: fixed;
     bottom: 24px;
@@ -471,7 +495,6 @@
   .toast.success { border-left: 3px solid var(--success); }
   .toast.error { border-left: 3px solid var(--error); }
 
-  /* Stats bar */
   .stats-bar {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -496,8 +519,24 @@
   }
 
   .stat-label { font-size: 12px; color: var(--muted); }
-
   .loading { color: var(--muted); font-size: 13px; font-family: 'DM Mono', monospace; }
+
+  .notif-banner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .notif-info    { border-left: 3px solid #60a5fa; }
+  .notif-warning { border-left: 3px solid #fbbf24; }
+  .notif-error   { border-left: 3px solid var(--error); }
+  .notif-success { border-left: 3px solid var(--success); }
 </style>
 </head>
 <body>
@@ -507,12 +546,14 @@
     <div class="logo-icon">⇄</div>
     PropBridge
   </div>
-<nav style="position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:8px;border:1px solid var(--border)">
-  <a id="navSettings" href="#" style="color:var(--text);text-decoration:none;font-size:14px;font-weight:500;padding:7px 18px;border-radius:6px;background:var(--bg)">Sync Rules</a>
-  <a id="navAccount" href="#" style="color:var(--muted);text-decoration:none;font-size:14px;padding:7px 18px;border-radius:6px;transition:color 0.15s">Account</a>
-</nav>
-<div class="portal-badge" id="portalBadge">Loading...</div>
+  <nav class="header-nav">
+    <a id="navSettings" href="#" class="active">Sync Rules</a>
+    <a id="navAccount" href="#">Account</a>
+  </nav>
+  <div class="portal-badge" id="portalBadge">Loading...</div>
 </div>
+
+<div id="notificationBanners" style="max-width:900px;margin:16px auto 0;padding:0 24px"></div>
 
 <div class="main">
   <div class="page-title">Sync Rules</div>
@@ -630,21 +671,52 @@
   let sourceProps = [];
   let targetProps = [];
 
-  // Get portal ID from URL params
   const urlParams = new URLSearchParams(window.location.search);
-  const portalId = urlParams.get('portalId') || 'Demo';
-  document.getElementById('portalBadge').textContent = 'Portal ' + portalId;
+  const portalId  = urlParams.get('portalId') || 'Demo';
+
+  document.getElementById('portalBadge').textContent  = 'Portal ' + portalId;
   document.getElementById('navSettings').href = '/settings?portalId=' + portalId;
-document.getElementById('navAccount').href = '/account?portalId=' + portalId;
+  document.getElementById('navAccount').href  = '/account?portalId=' + portalId;
+
+  // Load notifications
+  async function loadNotifications() {
+    try {
+      const res  = await fetch('/notifications?portalId=' + portalId);
+      const data = await res.json();
+      const banners = document.getElementById('notificationBanners');
+      const notifications = data.notifications || [];
+      if (!notifications.length) { banners.innerHTML = ''; return; }
+      const colors = { info: '#60a5fa', warning: '#fbbf24', error: '#f87171', success: '#4ade80' };
+      banners.innerHTML = notifications.map(n => `
+        <div class="notif-banner notif-${n.type}">
+          <div>
+            <strong style="font-size:14px">${n.title}</strong>
+            <p style="color:var(--muted);font-size:13px;margin-top:2px">${n.message}</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-shrink:0">
+            ${n.action_label && n.action_url ? `<a href="${n.action_url}${n.action_url.includes('?') ? '&' : '?'}portalId=${portalId}" style="background:var(--accent);color:white;padding:6px 14px;border-radius:6px;text-decoration:none;font-size:13px">${n.action_label}</a>` : ''}
+            <button onclick="dismissNotification(${n.id}, this.closest('.notif-banner'))" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:13px">✕</button>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) {}
+  }
+
+  async function dismissNotification(id, el) {
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.3s';
+    setTimeout(() => el.remove(), 300);
+    await fetch('/notifications/' + id + '/read', { method: 'POST' });
+  }
 
   function render() {
-    const list = document.getElementById('rulesList');
-    const total = rules.length;
-    const active = rules.filter(r => r.enabled).length;
+    const list     = document.getElementById('rulesList');
+    const total    = rules.length;
+    const active   = rules.filter(r => r.enabled).length;
     const mappings = rules.reduce((sum, r) => sum + (r.mappings?.length || 0), 0);
 
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statActive').textContent = active;
+    document.getElementById('statTotal').textContent    = total;
+    document.getElementById('statActive').textContent   = active;
     document.getElementById('statMappings').textContent = mappings;
 
     if (total === 0) {
@@ -695,7 +767,6 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
     rules = rules.map(r => r.id === id ? { ...r, enabled } : r);
     saveRules();
     render();
-    // Save to server
     fetch('/settings/rules', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -709,6 +780,11 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
     rules = rules.filter(r => r.id !== id);
     saveRules();
     render();
+    fetch('/settings/rules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portalId, rules })
+    }).catch(() => {});
     showToast('Rule deleted', '');
   }
 
@@ -716,18 +792,17 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
     const rule = rules.find(r => r.id === id);
     if (!rule) return;
     editingId = id;
-    document.getElementById('modalTitle').textContent = 'Edit Sync Rule';
-    document.getElementById('sourceObject').value = rule.sourceObject;
-    document.getElementById('targetObject').value = rule.targetObject;
-    document.getElementById('assocRule').value = rule.assocRule;
-    document.getElementById('assocLabel').value = rule.assocLabel || '';
-    document.getElementById('syncDirection').value = rule.direction;
-    document.getElementById('skipIfHasValue').value = rule.skipIfHasValue || 'false';
-    document.getElementById('ruleName').value = rule.name || '';
+    document.getElementById('modalTitle').textContent      = 'Edit Sync Rule';
+    document.getElementById('sourceObject').value          = rule.sourceObject;
+    document.getElementById('targetObject').value          = rule.targetObject;
+    document.getElementById('assocRule').value             = rule.assocRule;
+    document.getElementById('assocLabel').value            = rule.assocLabel || '';
+    document.getElementById('syncDirection').value         = rule.direction;
+    document.getElementById('skipIfHasValue').value        = rule.skipIfHasValue || 'false';
+    document.getElementById('ruleName').value              = rule.name || '';
     toggleLabelField();
     loadProperties().then(() => {
-      const list = document.getElementById('mappingsList');
-      list.innerHTML = '';
+      document.getElementById('mappingsList').innerHTML = '';
       (rule.mappings || []).forEach(m => addMappingRow(m.source, m.target));
     });
     document.getElementById('modalOverlay').classList.add('open');
@@ -735,16 +810,16 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
 
   function openModal() {
     editingId = null;
-    document.getElementById('modalTitle').textContent = 'New Sync Rule';
-    document.getElementById('sourceObject').value = '';
-    document.getElementById('targetObject').value = '';
-    document.getElementById('assocRule').value = 'all';
-    document.getElementById('assocLabel').value = '';
-    document.getElementById('syncDirection').value = 'one_way';
-    document.getElementById('skipIfHasValue').value = 'false';
-    document.getElementById('ruleName').value = '';
-    document.getElementById('mappingsList').innerHTML = '';
-    document.getElementById('propsStatus').textContent = '';
+    document.getElementById('modalTitle').textContent   = 'New Sync Rule';
+    document.getElementById('sourceObject').value       = '';
+    document.getElementById('targetObject').value       = '';
+    document.getElementById('assocRule').value          = 'all';
+    document.getElementById('assocLabel').value         = '';
+    document.getElementById('syncDirection').value      = 'one_way';
+    document.getElementById('skipIfHasValue').value     = 'false';
+    document.getElementById('ruleName').value           = '';
+    document.getElementById('mappingsList').innerHTML   = '';
+    document.getElementById('propsStatus').textContent  = '';
     toggleLabelField();
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -762,9 +837,7 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
     const src = document.getElementById('sourceObject').value;
     const tgt = document.getElementById('targetObject').value;
     if (!src && !tgt) return;
-
     document.getElementById('propsStatus').textContent = 'Loading...';
-
     try {
       const [srcRes, tgtRes] = await Promise.all([
         src ? fetch('/settings/properties/' + src + '?portalId=' + portalId).then(r => r.json()) : Promise.resolve({ properties: [] }),
@@ -798,7 +871,7 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
 
   function addMappingRow(srcVal, tgtVal) {
     const list = document.getElementById('mappingsList');
-    const div = document.createElement('div');
+    const div  = document.createElement('div');
     div.className = 'mapping-row';
     div.innerHTML = `
       <select class="src-select">${buildPropOptions(sourceProps, srcVal || '')}</select>
@@ -810,12 +883,12 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
   }
 
   function saveRule() {
-    const name        = document.getElementById('ruleName').value.trim();
-    const sourceObject = document.getElementById('sourceObject').value;
-    const targetObject = document.getElementById('targetObject').value;
-    const assocRule   = document.getElementById('assocRule').value;
-    const assocLabel  = document.getElementById('assocLabel').value.trim();
-    const direction   = document.getElementById('syncDirection').value;
+    const name           = document.getElementById('ruleName').value.trim();
+    const sourceObject   = document.getElementById('sourceObject').value;
+    const targetObject   = document.getElementById('targetObject').value;
+    const assocRule      = document.getElementById('assocRule').value;
+    const assocLabel     = document.getElementById('assocLabel').value.trim();
+    const direction      = document.getElementById('syncDirection').value;
     const skipIfHasValue = document.getElementById('skipIfHasValue').value;
 
     if (!sourceObject || !targetObject) {
@@ -841,12 +914,12 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
     }
 
     const rule = {
-      id: editingId || Date.now().toString(),
-      name: name || sourceObject + ' → ' + targetObject,
+      id:           editingId || Date.now().toString(),
+      name:         name || sourceObject + ' → ' + targetObject,
       sourceObject, targetObject, assocRule, assocLabel,
-      direction, skipIfHasValue, mappings,
-      enabled: editingId ? rules.find(r => r.id === editingId)?.enabled ?? true : true,
-      createdAt: editingId ? rules.find(r => r.id === editingId)?.createdAt : new Date().toISOString()
+      direction,    skipIfHasValue, mappings,
+      enabled:      editingId ? rules.find(r => r.id === editingId)?.enabled ?? true : true,
+      createdAt:    editingId ? rules.find(r => r.id === editingId)?.createdAt : new Date().toISOString()
     };
 
     if (editingId) {
@@ -859,7 +932,6 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
     render();
     closeModal();
 
-    // Persist to server
     fetch('/settings/rules', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -876,17 +948,16 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
   function showToast(msg, type) {
     const t = document.getElementById('toast');
     t.textContent = msg;
-    t.className = 'toast ' + (type || '');
+    t.className   = 'toast ' + (type || '');
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // Close modal on overlay click
   document.getElementById('modalOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });
 
-  // Load rules from server on init
+  // Load rules from server
   fetch('/settings/rules?portalId=' + portalId)
     .then(r => r.json())
     .then(data => {
@@ -897,6 +968,9 @@ document.getElementById('navAccount').href = '/account?portalId=' + portalId;
       render();
     })
     .catch(() => render());
+
+  // Load notifications
+  loadNotifications();
 </script>
 </body>
 </html>
