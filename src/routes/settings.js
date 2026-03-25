@@ -24,7 +24,6 @@ function getPool() {
   return pool;
 }
 
-// In-memory fallback
 const memRulesStore = {};
 
 async function getRules(portalId) {
@@ -57,12 +56,42 @@ async function saveRules(portalId, rules) {
   memRulesStore[portalId] = rules;
 }
 
-// ── GET /settings ─────────────────────────────────────────────
+// Known HubSpot object types as fallback
+const KNOWN_OBJECTS = [
+  { name: 'contacts',      label: 'Contacts' },
+  { name: 'companies',     label: 'Companies' },
+  { name: 'deals',         label: 'Deals' },
+  { name: 'tickets',       label: 'Tickets' },
+  { name: 'leads',         label: 'Leads' },
+  { name: 'products',      label: 'Products' },
+  { name: 'line_items',    label: 'Line Items' },
+  { name: 'quotes',        label: 'Quotes' },
+  { name: 'invoices',      label: 'Invoices' },
+  { name: 'orders',        label: 'Orders' },
+  { name: 'carts',         label: 'Carts' },
+  { name: 'appointments',  label: 'Appointments' },
+  { name: 'courses',       label: 'Courses' },
+  { name: 'listings',      label: 'Listings' },
+  { name: 'services',      label: 'Services' },
+  { name: 'goals',         label: 'Goals' },
+  { name: 'tasks',         label: 'Tasks' },
+  { name: 'calls',         label: 'Calls' },
+  { name: 'emails',        label: 'Emails' },
+  { name: 'meetings',      label: 'Meetings' },
+  { name: 'notes',         label: 'Notes' },
+  { name: 'communications', label: 'Communications' },
+  { name: 'postal_mail',   label: 'Postal Mail' },
+  { name: 'subscriptions', label: 'Subscriptions' },
+  { name: 'payments',      label: 'Payments' },
+  { name: 'discounts',     label: 'Discounts' }
+];
+
+// GET /settings
 router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/settings.html'));
 });
 
-// ── GET /settings/rules ───────────────────────────────────────
+// GET /settings/rules
 router.get('/rules', async (req, res) => {
   const { portalId } = req.query;
   if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
@@ -70,7 +99,7 @@ router.get('/rules', async (req, res) => {
   res.json({ rules });
 });
 
-// ── POST /settings/rules ──────────────────────────────────────
+// POST /settings/rules
 router.post('/rules', async (req, res) => {
   const { portalId, rules } = req.body;
   if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
@@ -79,7 +108,49 @@ router.post('/rules', async (req, res) => {
   res.json({ ok: true });
 });
 
-// ── GET /settings/properties/:objectType ─────────────────────
+// GET /settings/objects — dynamically fetch all available object types for a portal
+router.get('/objects', async (req, res) => {
+  const { portalId } = req.query;
+  if (!portalId) return res.status(400).json({ error: 'Missing portalId', objects: KNOWN_OBJECTS });
+
+  try {
+    const client = await getClient(portalId);
+    const axios  = require('axios');
+    const tokenStore = require('../services/tokenStore');
+    const tokens = await tokenStore.get(portalId);
+
+    if (!tokens?.access_token) {
+      return res.json({ objects: KNOWN_OBJECTS, source: 'fallback' });
+    }
+
+    // Fetch all object schemas from HubSpot
+    const schemasRes = await axios.get(
+      'https://api-eu1.hubapi.com/crm/v3/schemas',
+      { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+    );
+
+    const customObjects = (schemasRes.data?.results || []).map(schema => ({
+      name:  schema.objectTypeId || schema.name,
+      label: schema.labels?.singular || schema.name,
+      custom: true
+    }));
+
+    // Merge known objects with custom objects (deduplicate)
+    const knownNames   = new Set(KNOWN_OBJECTS.map(o => o.name));
+    const uniqueCustom = customObjects.filter(o => !knownNames.has(o.name));
+    const allObjects   = [...KNOWN_OBJECTS, ...uniqueCustom];
+
+    console.log(`[Settings] Loaded ${allObjects.length} object types for portal ${portalId} (${uniqueCustom.length} custom)`);
+    res.json({ objects: allObjects, source: 'dynamic' });
+
+  } catch (err) {
+    console.error('[Settings] Objects error:', err.message);
+    // Return fallback list so UI still works
+    res.json({ objects: KNOWN_OBJECTS, source: 'fallback' });
+  }
+});
+
+// GET /settings/properties/:objectType
 router.get('/properties/:objectType', async (req, res) => {
   const { objectType } = req.params;
   const { portalId }   = req.query;
@@ -88,38 +159,81 @@ router.get('/properties/:objectType', async (req, res) => {
 
   try {
     const client = await getClient(portalId);
-    const response = await client.crm.properties.coreApi.getAll(objectType);
-    const properties = (response.results || [])
-      .filter(p => !p.hidden && !p.calculated)
-      .sort((a, b) => a.label.localeCompare(b.label))
-      .map(p => ({ name: p.name, label: p.label, type: p.type }));
+
+    let properties = [];
+
+    // Try standard CRM properties API first
+    try {
+      const response = await client.crm.properties.coreApi.getAll(objectType);
+      properties = (response.results || [])
+        .filter(p => !p.hidden && !p.calculated)
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map(p => ({ name: p.name, label: p.label, type: p.type }));
+    } catch (crmErr) {
+      // Try with axios for non-standard objects
+      const axios      = require('axios');
+      const tokenStore = require('../services/tokenStore');
+      const tokens     = await tokenStore.get(portalId);
+
+      if (tokens?.access_token) {
+        // Try v3 properties endpoint
+        const propsRes = await axios.get(
+          `https://api-eu1.hubapi.com/crm/v3/properties/${objectType}`,
+          { headers: { Authorization: `Bearer ${tokens.access_token}` } }
+        );
+        properties = (propsRes.data?.results || [])
+          .filter(p => !p.hidden && !p.calculated)
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .map(p => ({ name: p.name, label: p.label, type: p.type }));
+      }
+    }
+
+    if (!properties.length) {
+      console.warn(`[Settings] No properties found for ${objectType}`);
+    } else {
+      console.log(`[Settings] Loaded ${properties.length} properties for ${objectType}`);
+    }
+
     res.json({ properties });
+
   } catch (err) {
-    console.error('[Settings] Properties error:', err.message);
-    // If token expired or missing, return helpful error
+    console.error('[Settings] Properties error for', objectType, ':', err.message);
     if (err.message.includes('not installed') || err.message.includes('token')) {
-      return res.status(401).json({ 
-        error: 'App not connected. Please reinstall.', 
+      return res.status(401).json({
+        error: 'App not connected. Please reinstall.',
         reinstallUrl: `${process.env.APP_BASE_URL}/oauth/install`,
-        properties: [] 
+        properties: []
       });
     }
     res.status(500).json({ error: err.message, properties: [] });
   }
 });
 
-// Export for use in crmcard
-module.exports = router;
-module.exports.getRules = getRules;
+// GET /settings/sync-webhooks
+router.get('/sync-webhooks', async (req, res) => {
+  try {
+    const webhookManager = require('../services/webhookManager');
+    const tokenStore     = require('../services/tokenStore');
+    const allTokens      = await tokenStore.getAll();
+    const allRules       = {};
+    for (const pid of Object.keys(allTokens)) {
+      allRules[pid] = await getRules(pid);
+    }
+    await webhookManager.syncSubscriptions(allRules);
+    res.json({ ok: true, portals: Object.keys(allTokens), message: 'Webhook subscriptions synced!' });
+  } catch (err) {
+    console.error('[Settings] Webhook sync error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-// Override POST /settings/rules to also sync webhooks
-const webhookManager = require('../services/webhookManager');
-
+// POST /settings/rules/sync-webhooks
 router.post('/rules/sync-webhooks', async (req, res) => {
   try {
-    const tokenStore = require('../services/tokenStore');
-    const allTokens  = await tokenStore.getAll();
-    const allRules   = {};
+    const webhookManager = require('../services/webhookManager');
+    const tokenStore     = require('../services/tokenStore');
+    const allTokens      = await tokenStore.getAll();
+    const allRules       = {};
     for (const portalId of Object.keys(allTokens)) {
       allRules[portalId] = await getRules(portalId);
     }
@@ -131,21 +245,5 @@ router.post('/rules/sync-webhooks', async (req, res) => {
   }
 });
 
-// GET /settings/sync-webhooks - trigger webhook subscription sync
-router.get('/sync-webhooks', async (req, res) => {
-  try {
-    const { portalId } = req.query;
-    const webhookManager = require('../services/webhookManager');
-    const tokenStore = require('../services/tokenStore');
-    const allTokens = await tokenStore.getAll();
-    const allRules = {};
-    for (const pid of Object.keys(allTokens)) {
-      allRules[pid] = await getRules(pid);
-    }
-    await webhookManager.syncSubscriptions(allRules);
-    res.json({ ok: true, portals: Object.keys(allTokens), message: 'Webhook subscriptions synced!' });
-  } catch (err) {
-    console.error('[Settings] Webhook sync error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
+module.exports = router;
+module.exports.getRules = getRules;
