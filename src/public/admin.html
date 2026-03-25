@@ -41,12 +41,14 @@
   tr:hover td { background: var(--surface2); }
 
   .tier-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-family: 'DM Mono', monospace; }
-  .tier-trial    { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
-  .tier-starter  { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
-  .tier-growth   { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
-  .tier-pro      { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
-  .tier-business { background: rgba(255,107,53,0.1); color: var(--accent); border: 1px solid rgba(255,107,53,0.3); }
-  .tier-expired  { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
+  .tier-trial     { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
+  .tier-starter   { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
+  .tier-growth    { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+  .tier-pro       { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+  .tier-business  { background: rgba(255,107,53,0.1); color: var(--accent); border: 1px solid rgba(255,107,53,0.3); }
+  .tier-cancelled { background: rgba(139,139,139,0.1); color: #888; border: 1px solid rgba(139,139,139,0.3); }
+  .tier-suspended { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
+  .tier-expired   { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
 
   .notif-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
   .notif-info    { background: rgba(96,165,250,0.1); color: #60a5fa; }
@@ -94,9 +96,9 @@
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showPanel('portals')">Portals</div>
-  <div class="tab" onclick="showPanel('messages')">Message Center</div>
-  <div class="tab" onclick="showPanel('history')">Notification History</div>
+  <div class="tab active" onclick="showPanel('portals', this)">Portals</div>
+  <div class="tab" onclick="showPanel('messages', this)">Message Center</div>
+  <div class="tab" onclick="showPanel('history', this)">Notification History</div>
 </div>
 
 <div class="main">
@@ -122,7 +124,7 @@
           <th>Portal ID</th>
           <th>Tier</th>
           <th>Usage</th>
-          <th>Trial / Updated</th>
+          <th>Last Updated</th>
           <th>Change Tier</th>
           <th>Actions</th>
         </tr>
@@ -140,7 +142,7 @@
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Send To</label>
-          <select id="msgTarget">
+          <select id="msgTarget" onchange="toggleSpecificPortal()">
             <option value="all">All Portals</option>
             <option value="trial">Trial portals only</option>
             <option value="paid">Paid portals only</option>
@@ -219,21 +221,21 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const TIER_PRICES = { trial: 0, starter: 7, growth: 12, pro: 16, business: 25 };
+  const TIER_PRICES = { trial: 0, starter: 7, growth: 12, pro: 16, business: 25, cancelled: 0, suspended: 0 };
   const adminKey = new URLSearchParams(window.location.search).get('key') || '';
 
-  function showPanel(name) {
+  function showPanel(name, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('panel-' + name).classList.add('active');
-    event.target.classList.add('active');
+    el.classList.add('active');
     if (name === 'history') loadHistory();
   }
 
-  document.getElementById('msgTarget').addEventListener('change', function() {
+  function toggleSpecificPortal() {
     document.getElementById('specificPortalGroup').style.display =
-      this.value === 'specific' ? 'flex' : 'none';
-  });
+      document.getElementById('msgTarget').value === 'specific' ? 'flex' : 'none';
+  }
 
   async function apiFetch(url, options = {}) {
     const sep = url.includes('?') ? '&' : '?';
@@ -251,7 +253,7 @@
       if (p.tier === 'trial') {
         const days = (now - new Date(p.trial_started_at).getTime()) / 86400000;
         if (days > 14) expired++; else trial++;
-      } else {
+      } else if (p.tier !== 'cancelled' && p.tier !== 'suspended') {
         paid++;
         mrr += TIER_PRICES[p.tier] || 0;
       }
@@ -270,17 +272,12 @@
       return;
     }
 
-    const maxRules = { trial: 10, starter: 10, growth: 30, pro: 50, business: 100 };
-
     tbody.innerHTML = portals.map(p => {
       const days      = (now - new Date(p.trial_started_at).getTime()) / 86400000;
       const isExpired = p.tier === 'trial' && days > 14;
       const tierClass = isExpired ? 'expired' : p.tier;
       const tierLabel = isExpired ? 'Expired' : p.tier.charAt(0).toUpperCase() + p.tier.slice(1);
       const daysLeft  = p.tier === 'trial' && !isExpired ? `${Math.ceil(14 - days)}d left` : '';
-      const max       = maxRules[p.tier] || 10;
-      const usagePct  = 0; // Would need rule count from DB
-      const fillClass = usagePct > 90 ? 'danger' : usagePct > 70 ? 'warning' : '';
 
       return `<tr>
         <td>
@@ -291,18 +288,17 @@
           <span class="tier-badge tier-${tierClass}">${tierLabel}</span>
           ${daysLeft ? `<span class="mono" style="margin-left:6px">${daysLeft}</span>` : ''}
         </td>
-        <td>
-          <div class="usage-bar"><div class="usage-fill ${fillClass}" style="width:${usagePct}%"></div></div>
-          <span class="mono" style="margin-left:6px">${usagePct}%</span>
-        </td>
+        <td>—</td>
         <td><span class="mono">${new Date(p.updated_at).toLocaleDateString()}</span></td>
         <td>
-          <select id="tier-${p.portal_id}" style="width:140px">
-            <option value="trial"    ${p.tier==='trial'?'selected':''}>Trial</option>
-            <option value="starter"  ${p.tier==='starter'?'selected':''}>Starter ($7)</option>
-            <option value="growth"   ${p.tier==='growth'?'selected':''}>Growth ($12)</option>
-            <option value="pro"      ${p.tier==='pro'?'selected':''}>Pro ($16)</option>
-            <option value="business" ${p.tier==='business'?'selected':''}>Business ($25)</option>
+          <select id="tier-${p.portal_id}" style="width:160px">
+            <option value="trial"     ${p.tier==='trial'?'selected':''}>Trial</option>
+            <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($7)</option>
+            <option value="growth"    ${p.tier==='growth'?'selected':''}>Growth ($12)</option>
+            <option value="pro"       ${p.tier==='pro'?'selected':''}>Pro ($16)</option>
+            <option value="business"  ${p.tier==='business'?'selected':''}>Business ($25)</option>
+            <option value="suspended" ${p.tier==='suspended'?'selected':''}>🚫 Suspended</option>
+            <option value="cancelled" ${p.tier==='cancelled'?'selected':''}>❌ Cancelled</option>
           </select>
         </td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
@@ -325,9 +321,10 @@
   }
 
   function msgPortal(portalId) {
-    showPanel('messages');
-    document.querySelector('.tab:nth-child(2)').classList.add('active');
-    document.querySelector('.tab:nth-child(1)').classList.remove('active');
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-messages').classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.add('active');
     document.getElementById('msgTarget').value = 'specific';
     document.getElementById('specificPortalGroup').style.display = 'flex';
     document.getElementById('msgPortalId').value = portalId;
@@ -344,12 +341,10 @@
     if (!title || !message) { showToast('Please fill in title and message'); return; }
 
     const body = { type, title, message, actionLabel, actionUrl };
-
     if (target === 'specific') {
       body.portalId = document.getElementById('msgPortalId').value.trim();
     } else {
       body.all = true;
-      // TODO: filter by trial/paid
     }
 
     const res  = await apiFetch('/admin/notify', {
@@ -360,8 +355,6 @@
     const data = await res.json();
     document.getElementById('msgStatus').textContent = `✓ Sent to ${data.sent} portal(s)`;
     showToast('✓ Notification sent!');
-
-    // Clear form
     document.getElementById('msgTitle').value = '';
     document.getElementById('msgBody').value = '';
     document.getElementById('msgActionLabel').value = '';
@@ -407,8 +400,8 @@
   async function runChecks() {
     document.getElementById('checksStatus').textContent = 'Running...';
     await apiFetch('/admin/run-checks', { method: 'POST' });
-    document.getElementById('checksStatus').textContent = '✓ Checks complete';
-    showToast('✓ Automated checks run');
+    document.getElementById('checksStatus').textContent = '✓ Done';
+    showToast('✓ Automated checks complete');
     loadPortals();
   }
 
