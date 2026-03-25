@@ -19,8 +19,8 @@
   .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #ffb347); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
   .admin-badge { background: var(--accent); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
 
-  .tabs { display: flex; gap: 4px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .tab { padding: 14px 20px; cursor: pointer; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .tabs { display: flex; gap: 4px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab { padding: 14px 20px; cursor: pointer; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
   .tab.active { color: var(--text); border-bottom-color: var(--accent); }
   .tab:hover { color: var(--text); }
 
@@ -55,21 +55,41 @@
   .notif-error   { background: rgba(248,113,113,0.1); color: var(--error); }
   .notif-success { background: rgba(74,222,128,0.1); color: var(--success); }
 
-  select, input, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 8px 12px; width: 100%; }
+  select, input, textarea {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 8px 12px; width: 100%;
+  }
+  textarea { font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.6; resize: vertical; }
   select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
   .btn { padding: 8px 16px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
   .btn-primary { background: var(--accent); color: white; }
   .btn-primary:hover { background: #ff8555; }
   .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-secondary:hover { color: var(--text); }
+  .btn-success { background: rgba(74,222,128,0.15); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
   .btn-sm { padding: 5px 12px; font-size: 13px; }
+  .btn-danger { background: rgba(248,113,113,0.15); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
 
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
-  .form-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .form-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .form-card .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   .form-group { display: flex; flex-direction: column; gap: 6px; }
   .form-group.full { grid-column: 1 / -1; }
   .form-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+
+  .email-rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+  .email-rule-header { display: flex; align-items: center; padding: 16px 20px; gap: 14px; cursor: pointer; }
+  .email-rule-header:hover { background: var(--surface2); }
+  .rule-toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .rule-toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--surface2); border-radius: 22px; border: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+  .toggle-slider:before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
+  input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+  input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
+  .rule-body { padding: 0 20px 20px; border-top: 1px solid var(--border); display: none; }
+  .rule-body.open { display: block; padding-top: 16px; }
 
   .mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
   .countdown-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 11px; }
@@ -79,7 +99,11 @@
 
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--success); border-radius: 8px; padding: 12px 18px; font-size: 14px; transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 300; }
   .toast.show { transform: translateY(0); opacity: 1; }
-  .actions-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+  .actions-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .var-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .var-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); cursor: pointer; }
+  .var-chip:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -92,6 +116,8 @@
 <div class="tabs">
   <div class="tab active" onclick="showPanel('portals', this)">Portals</div>
   <div class="tab" onclick="showPanel('messages', this)">Message Center</div>
+  <div class="tab" onclick="showPanel('emails', this)">Email Notifications</div>
+  <div class="tab" onclick="showPanel('emaillog', this)">Email Log</div>
   <div class="tab" onclick="showPanel('history', this)">Notification History</div>
 </div>
 
@@ -106,23 +132,13 @@
       <div class="stat-card"><div class="stat-value" id="statExpired">0</div><div class="stat-label">Expired</div></div>
       <div class="stat-card"><div class="stat-value" id="statMRR">$0</div><div class="stat-label">Est. MRR</div></div>
     </div>
-
     <div class="actions-row">
       <button class="btn btn-secondary btn-sm" onclick="runChecks()">▶ Run Automated Checks</button>
       <span class="mono" id="checksStatus"></span>
     </div>
-
     <table>
       <thead>
-        <tr>
-          <th>Portal ID</th>
-          <th>Tier</th>
-          <th>Started</th>
-          <th>Expires / Renewed</th>
-          <th>Status</th>
-          <th>Change Tier</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>Portal ID</th><th>Tier</th><th>Started</th><th>Expires</th><th>Status</th><th>Change Tier</th><th>Actions</th></tr>
       </thead>
       <tbody id="portalTable">
         <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">Loading...</td></tr>
@@ -133,7 +149,8 @@
   <!-- MESSAGE CENTER PANEL -->
   <div class="panel" id="panel-messages">
     <div class="form-card">
-      <h3>📣 Send Notification</h3>
+      <h3>📣 Send In-App Notification</h3>
+      <div class="subtitle">Sends a banner notification inside PropBridge for the selected portals.</div>
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Send To</label>
@@ -172,22 +189,64 @@
           <input type="text" id="msgActionUrl" placeholder="/account?portalId=...">
         </div>
       </div>
-      <button class="btn btn-primary" onclick="sendMessage()">Send Notification</button>
-      <span class="mono" id="msgStatus" style="margin-left:12px"></span>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-primary" onclick="sendMessage()">Send Notification</button>
+        <span class="mono" id="msgStatus"></span>
+      </div>
     </div>
-
     <div class="form-card">
       <h3>⚡ Quick Messages</h3>
       <div style="display:flex;flex-wrap:wrap;gap:10px">
-        <button class="btn btn-secondary btn-sm" onclick="quickMsg('trial_expiring')">Trial Expiring (3 days)</button>
+        <button class="btn btn-secondary btn-sm" onclick="quickMsg('trial_expiring')">Trial Expiring</button>
         <button class="btn btn-secondary btn-sm" onclick="quickMsg('usage_90')">Usage at 90%</button>
-        <button class="btn btn-secondary btn-sm" onclick="quickMsg('new_feature')">New Feature Announcement</button>
-        <button class="btn btn-secondary btn-sm" onclick="quickMsg('maintenance')">Scheduled Maintenance</button>
+        <button class="btn btn-secondary btn-sm" onclick="quickMsg('new_feature')">New Feature</button>
+        <button class="btn btn-secondary btn-sm" onclick="quickMsg('maintenance')">Maintenance</button>
       </div>
     </div>
   </div>
 
-  <!-- HISTORY PANEL -->
+  <!-- EMAIL NOTIFICATIONS PANEL -->
+  <div class="panel" id="panel-emails">
+    <div class="form-card" style="margin-bottom:24px">
+      <h3>📧 Email Notification Rules</h3>
+      <div class="subtitle">Manage automated email notifications sent to your customers. Toggle rules on/off and customise the subject and message for each trigger.</div>
+      <div style="margin-top:12px;padding:12px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+        <p style="font-size:13px;color:var(--muted)">Available variables you can use in subject and body:</p>
+        <div class="var-chips" style="margin-top:8px">
+          <span class="var-chip" onclick="copyVar('{{portalId}}')">{{portalId}}</span>
+          <span class="var-chip" onclick="copyVar('{{planName}}')">{{planName}}</span>
+          <span class="var-chip" onclick="copyVar('{{planPrice}}')">{{planPrice}}</span>
+          <span class="var-chip" onclick="copyVar('{{maxRules}}')">{{maxRules}}</span>
+          <span class="var-chip" onclick="copyVar('{{maxMappings}}')">{{maxMappings}}</span>
+          <span class="var-chip" onclick="copyVar('{{daysLeft}}')">{{daysLeft}}</span>
+          <span class="var-chip" onclick="copyVar('{{fromTier}}')">{{fromTier}}</span>
+          <span class="var-chip" onclick="copyVar('{{toTier}}')">{{toTier}}</span>
+          <span class="var-chip" onclick="copyVar('{{settingsUrl}}')">{{settingsUrl}}</span>
+          <span class="var-chip" onclick="copyVar('{{accountUrl}}')">{{accountUrl}}</span>
+        </div>
+      </div>
+    </div>
+    <div id="emailRulesList">
+      <div style="text-align:center;color:var(--muted);padding:40px">Loading email rules...</div>
+    </div>
+  </div>
+
+  <!-- EMAIL LOG PANEL -->
+  <div class="panel" id="panel-emaillog">
+    <div class="actions-row">
+      <button class="btn btn-secondary btn-sm" onclick="loadEmailLog()">↻ Refresh</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Portal</th><th>Rule</th><th>Sent To</th><th>Subject</th><th>Status</th><th>Sent At</th></tr>
+      </thead>
+      <tbody id="emailLogTable">
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- NOTIFICATION HISTORY PANEL -->
   <div class="panel" id="panel-history">
     <div class="actions-row">
       <button class="btn btn-secondary btn-sm" onclick="loadHistory()">↻ Refresh</button>
@@ -208,7 +267,7 @@
 
 <script>
   const TIER_PRICES = { trial: 0, starter: 7, growth: 12, pro: 16, business: 25, cancelled: 0, suspended: 0 };
-  const adminKey = new URLSearchParams(window.location.search).get('key') || '';
+  const adminKey    = new URLSearchParams(window.location.search).get('key') || '';
 
   function showPanel(name, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -216,6 +275,8 @@
     document.getElementById('panel-' + name).classList.add('active');
     el.classList.add('active');
     if (name === 'history') loadHistory();
+    if (name === 'emails') loadEmailRules();
+    if (name === 'emaillog') loadEmailLog();
   }
 
   function toggleSpecificPortal() {
@@ -235,27 +296,25 @@
 
   function getTrialCountdown(trialStartedAt, tier) {
     if (tier !== 'trial') return null;
-    const start    = new Date(trialStartedAt).getTime();
-    const expiry   = start + (14 * 24 * 60 * 60 * 1000);
-    const now      = Date.now();
-    const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
+    const expiry   = new Date(trialStartedAt).getTime() + (14 * 86400000);
+    const daysLeft = Math.ceil((expiry - Date.now()) / 86400000);
     return { daysLeft, expiry, isExpired: daysLeft <= 0 };
   }
+
+  // ── PORTALS ──────────────────────────────────────────────
 
   async function loadPortals() {
     const res     = await apiFetch('/admin/portals');
     const data    = await res.json();
     const portals = data.portals || [];
-    const now     = Date.now();
     let trial = 0, paid = 0, expired = 0, mrr = 0;
 
     portals.forEach(p => {
       if (p.tier === 'trial') {
-        const countdown = getTrialCountdown(p.trial_started_at, p.tier);
-        if (countdown?.isExpired) expired++; else trial++;
-      } else if (!['cancelled', 'suspended'].includes(p.tier)) {
-        paid++;
-        mrr += TIER_PRICES[p.tier] || 0;
+        const c = getTrialCountdown(p.trial_started_at, p.tier);
+        if (c?.isExpired) expired++; else trial++;
+      } else if (!['cancelled','suspended'].includes(p.tier)) {
+        paid++; mrr += TIER_PRICES[p.tier] || 0;
       }
     });
 
@@ -273,39 +332,31 @@
     }
 
     tbody.innerHTML = portals.map(p => {
-      const countdown  = getTrialCountdown(p.trial_started_at, p.tier);
-      const isExpired  = countdown?.isExpired;
-      const tierClass  = isExpired ? 'expired' : p.tier;
-      const tierLabel  = isExpired ? 'Trial Expired' : (p.tier.charAt(0).toUpperCase() + p.tier.slice(1));
-      const startDate  = formatDate(p.trial_started_at);
-      const expiryDate = p.tier === 'trial' ? formatDate(new Date(countdown?.expiry)) : '—';
+      const c         = getTrialCountdown(p.trial_started_at, p.tier);
+      const isExpired = c?.isExpired;
+      const tierClass = isExpired ? 'expired' : p.tier;
+      const tierLabel = isExpired ? 'Trial Expired' : p.tier.charAt(0).toUpperCase() + p.tier.slice(1);
+      const expiry    = p.tier === 'trial' ? formatDate(new Date(c?.expiry)) : '—';
+      let statusHtml  = '—';
 
-      let countdownHtml = '—';
-      if (p.tier === 'trial' && countdown) {
-        if (countdown.isExpired) {
-          countdownHtml = `<span class="countdown-pill countdown-danger">Expired</span>`;
-        } else if (countdown.daysLeft <= 3) {
-          countdownHtml = `<span class="countdown-pill countdown-danger">${countdown.daysLeft}d left</span>`;
-        } else if (countdown.daysLeft <= 7) {
-          countdownHtml = `<span class="countdown-pill countdown-warning">${countdown.daysLeft}d left</span>`;
-        } else {
-          countdownHtml = `<span class="countdown-pill countdown-ok">${countdown.daysLeft}d left</span>`;
-        }
-      } else if (!['trial', 'cancelled', 'suspended'].includes(p.tier)) {
-        countdownHtml = `<span class="countdown-pill countdown-ok">Active</span>`;
+      if (p.tier === 'trial' && c) {
+        const cls = c.isExpired ? 'danger' : c.daysLeft <= 3 ? 'danger' : c.daysLeft <= 7 ? 'warning' : 'ok';
+        statusHtml = `<span class="countdown-pill countdown-${cls}">${c.isExpired ? 'Expired' : c.daysLeft + 'd left'}</span>`;
+      } else if (!['trial','cancelled','suspended'].includes(p.tier)) {
+        statusHtml = `<span class="countdown-pill countdown-ok">Active</span>`;
       }
 
       return `<tr>
         <td>
-          <span class="mono" style="font-size:13px">${p.portal_id}</span><br>
-          <a href="/settings?portalId=${p.portal_id}" target="_blank" style="color:var(--accent);font-size:11px;text-decoration:none">Open Settings ↗</a>
+          <span class="mono">${p.portal_id}</span><br>
+          <a href="/settings?portalId=${p.portal_id}" target="_blank" style="color:var(--accent);font-size:11px;text-decoration:none">Settings ↗</a>
         </td>
         <td><span class="tier-badge tier-${tierClass}">${tierLabel}</span></td>
-        <td><span class="mono">${startDate}</span></td>
-        <td><span class="mono">${expiryDate}</span></td>
-        <td>${countdownHtml}</td>
+        <td><span class="mono">${formatDate(p.trial_started_at)}</span></td>
+        <td><span class="mono">${expiry}</span></td>
+        <td>${statusHtml}</td>
         <td>
-          <select id="tier-${p.portal_id}" style="width:160px">
+          <select id="tier-${p.portal_id}" style="width:155px">
             <option value="trial"     ${p.tier==='trial'?'selected':''}>Trial</option>
             <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($7)</option>
             <option value="growth"    ${p.tier==='growth'?'selected':''}>Growth ($12)</option>
@@ -344,6 +395,8 @@
     document.getElementById('msgPortalId').value = portalId;
   }
 
+  // ── MESSAGES ─────────────────────────────────────────────
+
   async function sendMessage() {
     const target      = document.getElementById('msgTarget').value;
     const type        = document.getElementById('msgType').value;
@@ -351,44 +404,154 @@
     const message     = document.getElementById('msgBody').value.trim();
     const actionLabel = document.getElementById('msgActionLabel').value.trim();
     const actionUrl   = document.getElementById('msgActionUrl').value.trim();
-
     if (!title || !message) { showToast('Please fill in title and message'); return; }
-
     const body = { type, title, message, actionLabel, actionUrl };
-    if (target === 'specific') {
-      body.portalId = document.getElementById('msgPortalId').value.trim();
-    } else {
-      body.all = true;
-    }
-
-    const res  = await apiFetch('/admin/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    if (target === 'specific') body.portalId = document.getElementById('msgPortalId').value.trim();
+    else body.all = true;
+    const res  = await apiFetch('/admin/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     document.getElementById('msgStatus').textContent = `✓ Sent to ${data.sent} portal(s)`;
     showToast('✓ Notification sent!');
     document.getElementById('msgTitle').value = '';
-    document.getElementById('msgBody').value = '';
-    document.getElementById('msgActionLabel').value = '';
-    document.getElementById('msgActionUrl').value = '';
+    document.getElementById('msgBody').value  = '';
   }
 
   function quickMsg(type) {
     const msgs = {
       trial_expiring: { title: 'Your free trial is ending soon', message: 'Upgrade now to keep your sync rules active.', type: 'warning', actionLabel: 'View Plans', actionUrl: '/account' },
-      usage_90: { title: "You've used 90% of your sync rules", message: 'You\'re approaching your plan limit. Upgrade to add more rules.', type: 'warning', actionLabel: 'Upgrade', actionUrl: '/account' },
-      new_feature: { title: '🎉 New Feature Available', message: 'We\'ve added new functionality to PropBridge. Check it out!', type: 'info' },
-      maintenance: { title: '🔧 Scheduled Maintenance', message: 'PropBridge will be briefly unavailable for maintenance. We apologize for any inconvenience.', type: 'warning' }
+      usage_90: { title: "You've used 90% of your sync rules", message: 'Upgrade to add more rules.', type: 'warning', actionLabel: 'Upgrade', actionUrl: '/account' },
+      new_feature: { title: '🎉 New Feature Available', message: 'We\'ve added new functionality to PropBridge!', type: 'info' },
+      maintenance: { title: '🔧 Scheduled Maintenance', message: 'PropBridge will be briefly unavailable for maintenance.', type: 'warning' }
     };
     const m = msgs[type];
-    document.getElementById('msgTitle').value       = m.title;
-    document.getElementById('msgBody').value        = m.message;
-    document.getElementById('msgType').value        = m.type;
-    document.getElementById('msgActionLabel').value = m.actionLabel || '';
-    document.getElementById('msgActionUrl').value   = m.actionUrl || '';
+    document.getElementById('msgTitle').value = m.title;
+    document.getElementById('msgBody').value  = m.message;
+    document.getElementById('msgType').value  = m.type;
   }
+
+  // ── EMAIL RULES ───────────────────────────────────────────
+
+  async function loadEmailRules() {
+    const res   = await apiFetch('/admin/email-rules');
+    const data  = await res.json();
+    const rules = data.rules || [];
+    const container = document.getElementById('emailRulesList');
+
+    if (!rules.length) {
+      container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px">No email rules found</div>';
+      return;
+    }
+
+    container.innerHTML = rules.map(rule => `
+      <div class="email-rule-card" id="rule-card-${rule.id}">
+        <div class="email-rule-header" onclick="toggleRuleBody('${rule.id}')">
+          <label class="rule-toggle" onclick="event.stopPropagation()">
+            <input type="checkbox" ${rule.enabled ? 'checked' : ''} onchange="toggleRule('${rule.id}', this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+          <div style="flex:1">
+            <div style="font-weight:500;font-size:15px">${rule.name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;font-family:monospace">${rule.subject}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();testEmail('${rule.id}')">✉ Test</button>
+            <span style="color:var(--muted);font-size:18px">›</span>
+          </div>
+        </div>
+        <div class="rule-body" id="rule-body-${rule.id}">
+          <div class="form-group" style="margin-bottom:12px">
+            <label class="form-label">Subject Line</label>
+            <input type="text" id="subject-${rule.id}" value="${escHtml(rule.subject)}">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Email Body</label>
+            <textarea id="body-${rule.id}" rows="8">${escHtml(rule.body)}</textarea>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary btn-sm" onclick="saveRule('${rule.id}', '${escHtml(rule.name)}')">Save Changes</button>
+            <button class="btn btn-secondary btn-sm" onclick="resetRule('${rule.id}')">Reset to Default</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleRuleBody(id) {
+    const body = document.getElementById('rule-body-' + id);
+    body.classList.toggle('open');
+  }
+
+  async function toggleRule(id, enabled) {
+    const subjectEl = document.getElementById('subject-' + id);
+    const bodyEl    = document.getElementById('body-' + id);
+    const subject   = subjectEl ? subjectEl.value : '';
+    const body      = bodyEl ? bodyEl.value : '';
+    await apiFetch('/admin/email-rules/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled, subject, body })
+    });
+    showToast(enabled ? '✓ Email rule enabled' : 'Email rule disabled');
+  }
+
+  async function saveRule(id, name) {
+    const subject = document.getElementById('subject-' + id).value.trim();
+    const body    = document.getElementById('body-' + id).value.trim();
+    const enabled = document.querySelector(`#rule-card-${id} input[type=checkbox]`).checked;
+    await apiFetch('/admin/email-rules/' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, body, enabled, name })
+    });
+    showToast('✓ Email rule saved');
+  }
+
+  async function testEmail(id) {
+    const email = prompt('Send test email to:');
+    if (!email) return;
+    const res  = await apiFetch('/admin/email-rules/' + id + '/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    showToast(data.ok ? '✓ Test email sent!' : '✗ Failed: ' + data.error);
+  }
+
+  async function resetRule(id) {
+    if (!confirm('Reset this rule to default content?')) return;
+    await apiFetch('/admin/email-rules/' + id + '/reset', { method: 'POST' });
+    showToast('✓ Rule reset to default');
+    loadEmailRules();
+  }
+
+  function copyVar(text) {
+    navigator.clipboard.writeText(text);
+    showToast('Copied ' + text);
+  }
+
+  // ── EMAIL LOG ─────────────────────────────────────────────
+
+  async function loadEmailLog() {
+    const res  = await apiFetch('/admin/email-log');
+    const data = await res.json();
+    const logs = data.logs || [];
+    const tbody = document.getElementById('emailLogTable');
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No emails sent yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = logs.map(l => `<tr>
+      <td><span class="mono">${l.portal_id || '—'}</span></td>
+      <td><span class="mono">${l.rule_id || '—'}</span></td>
+      <td><span class="mono">${l.to_email || '—'}</span></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.subject}</td>
+      <td><span class="notif-badge ${l.status === 'sent' ? 'notif-success' : 'notif-error'}">${l.status}</span></td>
+      <td><span class="mono">${new Date(l.created_at).toLocaleString()}</span></td>
+    </tr>`).join('');
+  }
+
+  // ── NOTIFICATION HISTORY ──────────────────────────────────
 
   async function loadHistory() {
     const res  = await apiFetch('/admin/notifications');
@@ -396,7 +559,7 @@
     const notifications = data.notifications || [];
     const tbody = document.getElementById('historyTable');
     if (!notifications.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No notifications sent yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No notifications yet</td></tr>';
       return;
     }
     tbody.innerHTML = notifications.map(n => `<tr>
@@ -408,6 +571,8 @@
       <td><span class="mono">${new Date(n.created_at).toLocaleString()}</span></td>
     </tr>`).join('');
   }
+
+  // ── UTILITIES ─────────────────────────────────────────────
 
   async function runChecks() {
     document.getElementById('checksStatus').textContent = 'Running...';
@@ -422,6 +587,10 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function escHtml(str) {
+    return String(str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   loadPortals();
