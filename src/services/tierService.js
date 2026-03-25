@@ -23,11 +23,13 @@ function getPool() {
 }
 
 const TIERS = {
-  trial:    { name: 'Free Trial',  maxRules: 10, maxMappings: 10, price: 0,  trialDays: 14 },
-  starter:  { name: 'Starter',     maxRules: 10, maxMappings: 10, price: 7   },
-  growth:   { name: 'Growth',      maxRules: 30, maxMappings: 30, price: 12  },
-  pro:      { name: 'Pro',         maxRules: 50, maxMappings: 50, price: 16  },
-  business: { name: 'Business',    maxRules: 100, maxMappings: 100, price: 25 }
+  trial:     { name: 'Free Trial',  maxRules: 10,  maxMappings: 10,  price: 0,  trialDays: 14 },
+  starter:   { name: 'Starter',     maxRules: 10,  maxMappings: 10,  price: 7   },
+  growth:    { name: 'Growth',      maxRules: 30,  maxMappings: 30,  price: 12  },
+  pro:       { name: 'Pro',         maxRules: 50,  maxMappings: 50,  price: 16  },
+  business:  { name: 'Business',    maxRules: 100, maxMappings: 100, price: 25  },
+  suspended: { name: 'Suspended',   maxRules: 0,   maxMappings: 0,   price: 0   },
+  cancelled: { name: 'Cancelled',   maxRules: 0,   maxMappings: 0,   price: 0   }
 };
 
 async function getPortalTier(portalId) {
@@ -41,28 +43,29 @@ async function getPortalTier(portalId) {
     );
 
     if (!result.rows[0]) {
-      // New portal — create trial
       await p.query(
         'INSERT INTO portal_tiers (portal_id, tier) VALUES ($1, $2) ON CONFLICT DO NOTHING',
         [String(portalId), 'trial']
       );
-      return { tier: 'trial', ...TIERS.trial, isExpired: false };
+      return { tier: 'trial', ...TIERS.trial, isExpired: false, trialDaysLeft: 14 };
     }
 
     const { tier, trial_started_at } = result.rows[0];
     const tierInfo = TIERS[tier] || TIERS.trial;
 
-    // Check if trial expired
     let isExpired = false;
+    let trialDaysLeft = 0;
+
     if (tier === 'trial') {
       const daysSinceStart = (Date.now() - new Date(trial_started_at).getTime()) / (1000 * 60 * 60 * 24);
       isExpired = daysSinceStart > 14;
+      trialDaysLeft = Math.max(0, 14 - daysSinceStart);
     }
 
-    return { tier, ...tierInfo, isExpired };
+    return { tier, ...tierInfo, isExpired, trialDaysLeft };
   } catch (err) {
     console.error('[Tiers] Get tier error:', err.message);
-    return { tier: 'trial', ...TIERS.trial, isExpired: false };
+    return { tier: 'trial', ...TIERS.trial, isExpired: false, trialDaysLeft: 14 };
   }
 }
 
@@ -105,6 +108,14 @@ async function checkLimits(portalId, rules) {
     return { allowed: false, reason: 'Trial expired. Please upgrade to continue.' };
   }
 
+  if (tierInfo.tier === 'suspended') {
+    return { allowed: false, reason: 'Your account is suspended. Please contact support.' };
+  }
+
+  if (tierInfo.tier === 'cancelled') {
+    return { allowed: false, reason: 'Your account has been cancelled. Please contact support to reactivate.' };
+  }
+
   if (rules.length > tierInfo.maxRules) {
     return {
       allowed: false,
@@ -125,4 +136,3 @@ async function checkLimits(portalId, rules) {
 }
 
 module.exports = { getPortalTier, setPortalTier, getAllPortals, checkLimits, TIERS };
-cancelled: { name: 'Cancelled', maxRules: 0, maxMappings: 0, price: 0 };
