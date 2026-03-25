@@ -50,7 +50,7 @@
   .date-item label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
   .date-value { font-family: 'DM Mono', monospace; font-size: 14px; }
 
-  .countdown-large { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; }
+  .countdown-large { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
   .countdown-ok      { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
   .countdown-warning { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
   .countdown-danger  { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
@@ -65,6 +65,7 @@
   .alert-banner { border-radius: var(--radius); padding: 14px 20px; margin-bottom: 24px; font-size: 14px; }
   .alert-warning { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); color: var(--warning); }
   .alert-error   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); }
+  .alert-success { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.3); color: var(--success); }
 
   .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; }
   .tiers-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 40px; }
@@ -83,6 +84,8 @@
   .btn-upgrade { width: 100%; padding: 10px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
   .btn-upgrade.primary { background: var(--accent); color: white; }
   .btn-upgrade.primary:hover { background: #ff8555; }
+  .btn-upgrade.downgrade { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-upgrade.downgrade:hover { border-color: var(--accent); color: var(--text); }
   .btn-upgrade.current-plan { background: var(--surface2); color: var(--muted); cursor: default; border: 1px solid var(--border); }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
@@ -90,17 +93,17 @@
   .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 480px; padding: 32px; }
   .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
   .modal-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-  .form-label { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  input, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 9px 12px; width: 100%; }
-  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .change-summary { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  .change-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14px; }
+  .change-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .change-label { color: var(--muted); }
+  .change-value { font-family: 'DM Mono', monospace; font-weight: 500; }
   .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border); }
   .btn { padding: 10px 20px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; }
   .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
   .btn-primary { background: var(--accent); color: white; }
   .btn-primary:hover { background: #ff8555; }
-  .success-state { text-align: center; padding: 20px 0; }
-  .success-icon { font-size: 48px; margin-bottom: 16px; }
+  .error-box { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 14px; color: var(--error); display: none; }
 </style>
 </head>
 <body>
@@ -131,36 +134,24 @@
         <div class="price-period">per month</div>
       </div>
     </div>
-
     <div class="plan-dates" id="planDates"></div>
-
     <div class="usage-bars" id="usageBars"></div>
   </div>
 
-  <div class="section-title">Choose a Plan</div>
+  <div class="section-title">Change Plan</div>
   <div class="tiers-grid" id="tiersGrid"></div>
 </div>
 
-<!-- Upgrade Modal -->
+<!-- Change Plan Modal -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modalInner">
-    <div class="modal-title" id="modalTitle">Upgrade Plan</div>
-    <div class="modal-subtitle">Fill in your details and we'll get you set up within 24 hours.</div>
-    <div class="form-group">
-      <label class="form-label">Your Name</label>
-      <input type="text" id="contactName" placeholder="Jane Smith">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Email Address</label>
-      <input type="email" id="contactEmail" placeholder="jane@company.com">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Requested Plan</label>
-      <input type="text" id="requestedPlan" readonly style="color:var(--muted)">
-    </div>
+    <div class="modal-title" id="modalTitle">Change Plan</div>
+    <div class="modal-subtitle" id="modalSubtitle"></div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="change-summary" id="changeSummary"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitUpgrade()">Send Request</button>
+      <button class="btn btn-primary" id="confirmBtn" onclick="confirmChange()">Confirm Change</button>
     </div>
   </div>
 </div>
@@ -181,6 +172,10 @@
     business: { name: 'Business',    price: 25, maxRules: 100, maxMappings: 100, desc: 'For agencies & enterprise' }
   };
 
+  let currentTier = 'trial';
+  let currentUsage = { rules: 0, mappings: 0, maxMappingsPerRule: 0 };
+  let selectedTier = '';
+
   function formatDate(dateStr) {
     if (!dateStr) return '—';
     return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -188,78 +183,65 @@
 
   async function load() {
     try {
-      const [tierRes, rulesRes] = await Promise.all([
-        fetch('/account/tier?portalId=' + portalId).then(r => r.json()),
-        fetch('/settings/rules?portalId=' + portalId).then(r => r.json())
-      ]);
+      const tierRes = await fetch('/account/tier?portalId=' + portalId).then(r => r.json());
 
-      const tier      = tierRes.tier || 'trial';
-      const tierInfo  = TIERS[tier] || TIERS.trial;
-      const rules     = rulesRes.rules || [];
-      const isExpired = tierRes.isExpired;
+      currentTier  = tierRes.tier || 'trial';
+      currentUsage = tierRes.usage || { rules: 0, mappings: 0, maxMappingsPerRule: 0 };
+
+      const tierInfo      = TIERS[currentTier] || TIERS.trial;
+      const isExpired     = tierRes.isExpired;
       const trialDaysLeft = tierRes.trialDaysLeft || 0;
 
       // Plan card
-      const planCard = document.getElementById('planCard');
-      planCard.className = 'plan-card ' + (isExpired ? 'expired' : tier);
+      document.getElementById('planCard').className = 'plan-card ' + (isExpired ? 'expired' : currentTier);
       document.getElementById('planName').textContent = isExpired ? 'Trial Expired' : tierInfo.name;
       document.getElementById('planDesc').textContent = tierInfo.desc || '';
-      document.getElementById('planPrice').textContent = tier === 'trial' ? 'Free' : '$' + tierInfo.price;
+      document.getElementById('planPrice').textContent = currentTier === 'trial' ? 'Free' : '$' + tierInfo.price;
 
-      // Dates section
-      const trialStart  = tierRes.trial_started_at || null;
+      // Dates
+      const trialStart  = tierRes.trial_started_at;
       const trialExpiry = trialStart ? new Date(new Date(trialStart).getTime() + 14 * 86400000) : null;
 
       let countdownHtml = '';
-      if (tier === 'trial') {
+      if (currentTier === 'trial') {
         const days = Math.ceil(trialDaysLeft);
         if (isExpired) {
-          countdownHtml = `<span class="countdown-large countdown-danger">⚠ Trial expired</span>`;
+          countdownHtml = `<span class="countdown-large countdown-danger">⚠ Expired</span>`;
         } else if (days <= 3) {
-          countdownHtml = `<span class="countdown-large countdown-danger">⏰ ${days} day${days !== 1 ? 's' : ''} remaining</span>`;
+          countdownHtml = `<span class="countdown-large countdown-danger">⏰ ${days}d left</span>`;
         } else if (days <= 7) {
-          countdownHtml = `<span class="countdown-large countdown-warning">⏳ ${days} days remaining</span>`;
+          countdownHtml = `<span class="countdown-large countdown-warning">⏳ ${days}d left</span>`;
         } else {
-          countdownHtml = `<span class="countdown-large countdown-ok">✓ ${days} days remaining</span>`;
+          countdownHtml = `<span class="countdown-large countdown-ok">✓ ${days}d left</span>`;
         }
-      } else if (!['cancelled', 'suspended'].includes(tier)) {
-        countdownHtml = `<span class="countdown-large countdown-ok">✓ Active subscription</span>`;
+      } else if (!['cancelled','suspended'].includes(currentTier)) {
+        countdownHtml = `<span class="countdown-large countdown-ok">✓ Active</span>`;
       }
 
       document.getElementById('planDates').innerHTML = `
-        <div class="date-item">
-          <label>Started</label>
-          <div class="date-value">${formatDate(trialStart)}</div>
-        </div>
-        <div class="date-item">
-          <label>${tier === 'trial' ? 'Trial Expires' : 'Next Renewal'}</label>
-          <div class="date-value">${tier === 'trial' ? formatDate(trialExpiry) : '—'}</div>
-        </div>
-        <div class="date-item">
-          <label>Status</label>
-          <div>${countdownHtml}</div>
-        </div>
+        <div class="date-item"><label>Started</label><div class="date-value">${formatDate(trialStart)}</div></div>
+        <div class="date-item"><label>${currentTier === 'trial' ? 'Trial Expires' : 'Plan Since'}</label><div class="date-value">${currentTier === 'trial' ? formatDate(trialExpiry) : formatDate(trialStart)}</div></div>
+        <div class="date-item"><label>Status</label><div>${countdownHtml}</div></div>
       `;
 
       // Alert banners
       const alertBanner = document.getElementById('alertBanner');
       if (isExpired) {
-        alertBanner.innerHTML = `<div class="alert-banner alert-error">⚠️ Your free trial has expired. Your sync rules are paused. Upgrade below to reactivate PropBridge.</div>`;
-      } else if (tier === 'trial' && trialDaysLeft <= 3) {
-        alertBanner.innerHTML = `<div class="alert-banner alert-warning">⏰ Your free trial expires in ${Math.ceil(trialDaysLeft)} day${Math.ceil(trialDaysLeft) !== 1 ? 's' : ''}. Upgrade now to keep your rules active.</div>`;
-      } else if (tier === 'suspended') {
-        alertBanner.innerHTML = `<div class="alert-banner alert-error">🚫 Your account is suspended. Please contact support to reactivate.</div>`;
-      } else if (tier === 'cancelled') {
+        alertBanner.innerHTML = `<div class="alert-banner alert-error">⚠️ Your free trial has expired. Upgrade below to reactivate PropBridge.</div>`;
+      } else if (currentTier === 'trial' && trialDaysLeft <= 3) {
+        alertBanner.innerHTML = `<div class="alert-banner alert-warning">⏰ Trial expires in ${Math.ceil(trialDaysLeft)} day(s). Upgrade now to keep your rules active.</div>`;
+      } else if (currentTier === 'suspended') {
+        alertBanner.innerHTML = `<div class="alert-banner alert-error">🚫 Your account is suspended. Please contact support.</div>`;
+      } else if (currentTier === 'cancelled') {
         alertBanner.innerHTML = `<div class="alert-banner alert-error">❌ Your account has been cancelled. Contact support to reactivate.</div>`;
       }
 
       // Usage bars
-      const totalMappings = rules.reduce((sum, r) => sum + (r.mappings?.length || 0), 0);
-      const rulesUsed     = rules.length;
-      const maxRules      = tierInfo.maxRules || 10;
-      const maxMappings   = tierInfo.maxMappings || 10;
-      const rulesPct      = Math.min(100, (rulesUsed / maxRules) * 100);
-      const mappingsPct   = Math.min(100, (totalMappings / maxMappings) * 100);
+      const rulesUsed  = currentUsage.rules;
+      const maxRules   = tierInfo.maxRules || 10;
+      const maxMapp    = tierInfo.maxMappings || 10;
+      const rulesPct   = Math.min(100, (rulesUsed / maxRules) * 100);
+      const mappPct    = Math.min(100, (currentUsage.maxMappingsPerRule / maxMapp) * 100);
 
       document.getElementById('usageBars').innerHTML = `
         <div class="usage-item">
@@ -267,77 +249,123 @@
           <div class="progress"><div class="progress-fill ${rulesPct >= 100 ? 'danger' : rulesPct >= 80 ? 'warning' : ''}" style="width:${rulesPct}%"></div></div>
         </div>
         <div class="usage-item">
-          <label><span>Total Property Mappings</span><span>${totalMappings} / ${maxMappings} per rule</span></label>
-          <div class="progress"><div class="progress-fill ${mappingsPct >= 100 ? 'danger' : mappingsPct >= 80 ? 'warning' : ''}" style="width:${mappingsPct}%"></div></div>
+          <label><span>Max Mappings in a Rule</span><span>${currentUsage.maxMappingsPerRule} / ${maxMapp}</span></label>
+          <div class="progress"><div class="progress-fill ${mappPct >= 100 ? 'danger' : mappPct >= 80 ? 'warning' : ''}" style="width:${mappPct}%"></div></div>
         </div>
       `;
 
       // Tier cards
-      const tierOrder = ['starter', 'growth', 'pro', 'business'];
-      document.getElementById('tiersGrid').innerHTML = tierOrder.map(t => {
-        const info      = TIERS[t];
-        const isCurrent = tier === t || (tier === 'trial' && t === 'starter');
-        const isPopular = t === 'growth';
-        return `
-          <div class="tier-card ${isCurrent ? 'current' : ''} ${isPopular && !isCurrent ? 'popular' : ''}">
-            ${isCurrent ? '<div class="current-badge">Current Plan</div>' : ''}
-            ${isPopular && !isCurrent ? '<div class="popular-badge">Most Popular</div>' : ''}
-            <div class="tier-name">${info.name}</div>
-            <div class="tier-price">$${info.price}</div>
-            <div class="tier-period">per month</div>
-            <ul class="tier-features">
-              <li>${info.maxRules} sync rules</li>
-              <li>${info.maxMappings} mappings per rule</li>
-              <li>Real-time webhook sync</li>
-              <li>All object types</li>
-            </ul>
-            <button class="btn-upgrade ${isCurrent ? 'current-plan' : 'primary'}"
-              onclick="${isCurrent ? '' : `openUpgrade('${t}', '${info.name}', ${info.price})`}">
-              ${isCurrent ? 'Current Plan' : 'Upgrade'}
-            </button>
-          </div>
-        `;
-      }).join('');
+      renderTiers();
 
     } catch (err) {
       console.error('Load error:', err);
     }
   }
 
-  let selectedTier = '';
+  function renderTiers() {
+    const tierOrder = ['starter', 'growth', 'pro', 'business'];
+    document.getElementById('tiersGrid').innerHTML = tierOrder.map(t => {
+      const info      = TIERS[t];
+      const isCurrent = currentTier === t || (currentTier === 'trial' && t === 'starter');
+      const isPopular = t === 'growth';
+      const isUpgrade = info.price > (TIERS[currentTier]?.price || 0);
+      const btnClass  = isCurrent ? 'current-plan' : isUpgrade ? 'primary' : 'downgrade';
+      const btnLabel  = isCurrent ? 'Current Plan' : isUpgrade ? '↑ Upgrade' : '↓ Downgrade';
 
-  function openUpgrade(tier, name, price) {
+      // Check if downgrade is blocked
+      const wouldBlock = !isCurrent && !isUpgrade && (
+        currentUsage.rules > info.maxRules ||
+        currentUsage.maxMappingsPerRule > info.maxMappings
+      );
+
+      return `
+        <div class="tier-card ${isCurrent ? 'current' : ''} ${isPopular && !isCurrent ? 'popular' : ''}">
+          ${isCurrent ? '<div class="current-badge">Current Plan</div>' : ''}
+          ${isPopular && !isCurrent ? '<div class="popular-badge">Most Popular</div>' : ''}
+          <div class="tier-name">${info.name}</div>
+          <div class="tier-price">$${info.price}</div>
+          <div class="tier-period">per month</div>
+          <ul class="tier-features">
+            <li>${info.maxRules} sync rules</li>
+            <li>${info.maxMappings} mappings per rule</li>
+            <li>Real-time webhook sync</li>
+            <li>All object types</li>
+          </ul>
+          ${wouldBlock
+            ? `<button class="btn-upgrade" style="background:var(--surface2);color:var(--error);border:1px solid rgba(248,113,113,0.3);cursor:not-allowed" title="Reduce your usage first" disabled>⚠ Can't Downgrade</button>`
+            : `<button class="btn-upgrade ${btnClass}" onclick="${isCurrent ? '' : `openChange('${t}')`}" ${isCurrent ? 'disabled' : ''}>${btnLabel}</button>`
+          }
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openChange(tier) {
     selectedTier = tier;
-    document.getElementById('modalTitle').textContent  = `Upgrade to ${name} — $${price}/mo`;
-    document.getElementById('requestedPlan').value     = `${name} ($${price}/month)`;
-    document.getElementById('contactName').value       = '';
-    document.getElementById('contactEmail').value      = '';
+    const newInfo  = TIERS[tier];
+    const curInfo  = TIERS[currentTier] || TIERS.trial;
+    const isUpgrade = newInfo.price > curInfo.price;
+
+    document.getElementById('modalTitle').textContent    = isUpgrade ? `Upgrade to ${newInfo.name}` : `Downgrade to ${newInfo.name}`;
+    document.getElementById('modalSubtitle').textContent = isUpgrade
+      ? `You're upgrading your plan. Your new limits will apply immediately.`
+      : `You're downgrading your plan. Please make sure you're within the new limits.`;
+
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('changeSummary').innerHTML = `
+      <div class="change-row"><span class="change-label">From</span><span class="change-value">${curInfo.name} ($${curInfo.price}/mo)</span></div>
+      <div class="change-row"><span class="change-label">To</span><span class="change-value">${newInfo.name} ($${newInfo.price}/mo)</span></div>
+      <div class="change-row"><span class="change-label">Sync Rules</span><span class="change-value">${curInfo.maxRules} → ${newInfo.maxRules}</span></div>
+      <div class="change-row"><span class="change-label">Mappings per Rule</span><span class="change-value">${curInfo.maxMappings} → ${newInfo.maxMappings}</span></div>
+      <div class="change-row"><span class="change-label">Your Current Usage</span><span class="change-value">${currentUsage.rules} rules / ${currentUsage.maxMappingsPerRule} max mappings</span></div>
+    `;
+
     document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  async function confirmChange() {
+    const btn = document.getElementById('confirmBtn');
+    btn.textContent = 'Processing...';
+    btn.disabled    = true;
+
+    try {
+      const res  = await fetch('/account/change-tier', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ portalId, newTier: selectedTier })
+      });
+      const data = await res.json();
+
+      if (!data.ok || data.blocked) {
+        const errBox = document.getElementById('errorBox');
+        errBox.textContent    = data.reason || 'Could not change plan. Please try again.';
+        errBox.style.display  = 'block';
+        btn.textContent       = 'Confirm Change';
+        btn.disabled          = false;
+        return;
+      }
+
+      // Success
+      closeModal();
+      document.getElementById('alertBanner').innerHTML = `
+        <div class="alert-banner alert-success">✅ Your plan has been changed to ${TIERS[selectedTier].name}!</div>
+      `;
+      currentTier = selectedTier;
+      await load();
+
+    } catch (err) {
+      const errBox = document.getElementById('errorBox');
+      errBox.textContent   = 'An error occurred. Please try again.';
+      errBox.style.display = 'block';
+      btn.textContent      = 'Confirm Change';
+      btn.disabled         = false;
+    }
   }
 
   function closeModal() {
     document.getElementById('modalOverlay').classList.remove('open');
-  }
-
-  async function submitUpgrade() {
-    const name  = document.getElementById('contactName').value.trim();
-    const email = document.getElementById('contactEmail').value.trim();
-    if (!name || !email) { alert('Please fill in your name and email.'); return; }
-
-    await fetch('/account/upgrade-request', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ portalId, tier: selectedTier, name, email })
-    });
-
-    document.getElementById('modalInner').innerHTML = `
-      <div class="success-state">
-        <div class="success-icon">✅</div>
-        <div style="font-size:20px;font-weight:600;margin-bottom:8px">Request Sent!</div>
-        <div style="color:var(--muted);font-size:14px">We'll be in touch within 24 hours to get you set up.</div>
-        <button class="btn btn-primary" onclick="closeModal()" style="margin-top:20px">Close</button>
-      </div>
-    `;
+    document.getElementById('confirmBtn').textContent = 'Confirm Change';
+    document.getElementById('confirmBtn').disabled    = false;
   }
 
   document.getElementById('modalOverlay').addEventListener('click', function(e) {
