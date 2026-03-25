@@ -1,6 +1,6 @@
 // src/services/notificationService.js
 const { Pool } = require('pg');
-const axios = require('axios');
+const axios    = require('axios');
 
 let pool = null;
 
@@ -23,39 +23,35 @@ function getPool() {
         created_at TIMESTAMP DEFAULT NOW(),
         read_at TIMESTAMP
       );
-      CREATE TABLE IF NOT EXISTS notification_rules (
-        id SERIAL PRIMARY KEY,
-        trigger_type TEXT NOT NULL,
-        threshold INTEGER,
-        title TEXT NOT NULL,
-        message TEXT NOT NULL,
-        type TEXT NOT NULL DEFAULT 'warning',
-        action_label TEXT,
-        action_url TEXT,
-        enabled BOOLEAN DEFAULT TRUE,
-        created_at TIMESTAMP DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS notifications_portal_id ON notifications(portal_id);
-      CREATE INDEX IF NOT EXISTS notifications_status ON notifications(status);
+      CREATE INDEX IF NOT EXISTS idx_notifications_portal_id ON notifications(portal_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_status ON notifications(status);
     `).then(() => console.log('[Notifications] Tables ready'))
       .catch(err => console.error('[Notifications] Table error:', err.message));
   }
   return pool;
 }
 
+// Initialize on module load
+getPool();
+
 // Create a notification for a portal
 async function createNotification(portalId, { type, title, message, actionLabel, actionUrl }) {
   const p = getPool();
-  if (!p) return;
+  if (!p) {
+    console.error('[Notifications] No database pool available');
+    return null;
+  }
   try {
-    await p.query(
+    const result = await p.query(
       `INSERT INTO notifications (portal_id, type, title, message, action_label, action_url)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
       [String(portalId), type || 'info', title, message, actionLabel || null, actionUrl || null]
     );
-    console.log(`[Notifications] Created notification for portal ${portalId}: ${title}`);
+    console.log(`[Notifications] Created notification ID ${result.rows[0].id} for portal ${portalId}: "${title}"`);
+    return result.rows[0].id;
   } catch (err) {
     console.error('[Notifications] Create error:', err.message);
+    return null;
   }
 }
 
@@ -66,9 +62,8 @@ async function getNotifications(portalId, includeRead = false) {
   try {
     const query = includeRead
       ? 'SELECT * FROM notifications WHERE portal_id = $1 ORDER BY created_at DESC LIMIT 20'
-      : 'SELECT * FROM notifications WHERE portal_id = $1 AND status = $2 ORDER BY created_at DESC';
-    const params = includeRead ? [String(portalId)] : [String(portalId), 'unread'];
-    const result = await p.query(query, params);
+      : "SELECT * FROM notifications WHERE portal_id = $1 AND status = 'unread' ORDER BY created_at DESC";
+    const result = await p.query(query, [String(portalId)]);
     return result.rows;
   } catch (err) {
     console.error('[Notifications] Get error:', err.message);
@@ -82,8 +77,8 @@ async function markRead(notificationId) {
   if (!p) return;
   try {
     await p.query(
-      'UPDATE notifications SET status = $1, read_at = NOW() WHERE id = $2',
-      ['read', notificationId]
+      "UPDATE notifications SET status = 'read', read_at = NOW() WHERE id = $1",
+      [notificationId]
     );
   } catch (err) {
     console.error('[Notifications] Mark read error:', err.message);
@@ -96,11 +91,27 @@ async function markAllRead(portalId) {
   if (!p) return;
   try {
     await p.query(
-      'UPDATE notifications SET status = $1, read_at = NOW() WHERE portal_id = $2 AND status = $3',
-      ['read', String(portalId), 'unread']
+      "UPDATE notifications SET status = 'read', read_at = NOW() WHERE portal_id = $1 AND status = 'unread'",
+      [String(portalId)]
     );
   } catch (err) {
     console.error('[Notifications] Mark all read error:', err.message);
+  }
+}
+
+// Get all notifications (admin view)
+async function getAllNotifications(limit = 100) {
+  const p = getPool();
+  if (!p) return [];
+  try {
+    const result = await p.query(
+      'SELECT * FROM notifications ORDER BY created_at DESC LIMIT $1',
+      [limit]
+    );
+    return result.rows;
+  } catch (err) {
+    console.error('[Notifications] Get all error:', err.message);
+    return [];
   }
 }
 
@@ -125,10 +136,10 @@ async function sendEmail(to, subject, html) {
   }
 }
 
-// Send notification to portal (in-app + optionally email)
+// Send notification (in-app + optionally email)
 async function notify(portalId, notification, emailTo = null) {
-  await createNotification(portalId, notification);
-  if (emailTo) {
+  const id = await createNotification(portalId, notification);
+  if (emailTo && id) {
     await sendEmail(
       emailTo,
       notification.title,
@@ -143,22 +154,7 @@ async function notify(portalId, notification, emailTo = null) {
       </div>`
     );
   }
-}
-
-// Get all notifications (admin view)
-async function getAllNotifications(limit = 100) {
-  const p = getPool();
-  if (!p) return [];
-  try {
-    const result = await p.query(
-      'SELECT * FROM notifications ORDER BY created_at DESC LIMIT $1',
-      [limit]
-    );
-    return result.rows;
-  } catch (err) {
-    console.error('[Notifications] Get all error:', err.message);
-    return [];
-  }
+  return id;
 }
 
 // Run automated notification checks
@@ -168,53 +164,55 @@ async function runAutomatedChecks() {
 
   try {
     const { getAllPortals } = require('./tierService');
-    const { getRules }     = require('../routes/settings');
+    const { getRules }      = require('../routes/settings');
+    const { TIERS }         = require('./tierService');
     const portals = await getAllPortals();
 
     for (const portal of portals) {
-      const portalId  = portal.portal_id;
-      const tier      = portal.tier;
-      const rules     = await getRules(portalId);
-      const { TIERS } = require('./tierService');
-      const tierInfo  = TIERS[tier] || TIERS.trial;
+      const portalId = portal.portal_id;
+      const tier     = portal.tier;
+      const rules    = await getRules(portalId);
+      const tierInfo = TIERS[tier] || TIERS.trial;
+
+      if (!tierInfo.maxRules) continue; // Skip suspended/cancelled
 
       // Check usage > 90%
       const usagePct = (rules.length / tierInfo.maxRules) * 100;
       if (usagePct >= 90 && usagePct < 100) {
-        // Check if we already sent this recently
         const recent = await p.query(
-          `SELECT id FROM notifications WHERE portal_id = $1 AND type = 'warning' 
+          `SELECT id FROM notifications WHERE portal_id = $1 AND type = 'warning'
            AND title LIKE '%90%' AND created_at > NOW() - INTERVAL '7 days'`,
           [portalId]
         );
         if (!recent.rows.length) {
-          await notify(portalId, {
-            type: 'warning',
-            title: "You've used 90% of your sync rules",
-            message: `You're using ${rules.length} of ${tierInfo.maxRules} sync rules on your ${tierInfo.name} plan. Upgrade to avoid hitting your limit.`,
+          await createNotification(portalId, {
+            type:        'warning',
+            title:       "You've used 90% of your sync rules",
+            message:     `You're using ${rules.length} of ${tierInfo.maxRules} sync rules. Upgrade to avoid hitting your limit.`,
             actionLabel: 'Upgrade Now',
-            actionUrl: `/account?portalId=${portalId}`
+            actionUrl:   `/account?portalId=${portalId}`
           });
         }
       }
 
-      // Check trial expiring in 3 days
+      // Trial expiring in 3 days
       if (tier === 'trial') {
         const daysSince = (Date.now() - new Date(portal.trial_started_at).getTime()) / 86400000;
         const daysLeft  = 14 - daysSince;
+
         if (daysLeft <= 3 && daysLeft > 0) {
           const recent = await p.query(
-            `SELECT id FROM notifications WHERE portal_id = $1 AND type = 'warning'
+            `SELECT id FROM notifications WHERE portal_id = $1
              AND title LIKE '%trial%' AND created_at > NOW() - INTERVAL '3 days'`,
             [portalId]
           );
           if (!recent.rows.length) {
-            await notify(portalId, {
-              type: 'warning',
-              title: `Your free trial expires in ${Math.ceil(daysLeft)} day${Math.ceil(daysLeft) !== 1 ? 's' : ''}`,
-              message: 'Upgrade now to keep your sync rules active after your trial ends.',
+            await createNotification(portalId, {
+              type:        'warning',
+              title:       `Your free trial expires in ${Math.ceil(daysLeft)} day${Math.ceil(daysLeft) !== 1 ? 's' : ''}`,
+              message:     'Upgrade now to keep your sync rules active after your trial ends.',
               actionLabel: 'View Plans',
-              actionUrl: `/account?portalId=${portalId}`
+              actionUrl:   `/account?portalId=${portalId}`
             });
           }
         }
@@ -227,12 +225,12 @@ async function runAutomatedChecks() {
             [portalId]
           );
           if (!recent.rows.length) {
-            await notify(portalId, {
-              type: 'error',
-              title: 'Your free trial has expired',
-              message: 'Your sync rules are now paused. Upgrade to reactivate PropBridge.',
+            await createNotification(portalId, {
+              type:        'error',
+              title:       'Your free trial has expired',
+              message:     'Your sync rules are now paused. Upgrade to reactivate PropBridge.',
               actionLabel: 'Upgrade Now',
-              actionUrl: `/account?portalId=${portalId}`
+              actionUrl:   `/account?portalId=${portalId}`
             });
           }
         }
