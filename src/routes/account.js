@@ -3,6 +3,15 @@ const express = require('express');
 const router  = express.Router();
 const path    = require('path');
 const { getPortalTier } = require('../services/tierService');
+const { Pool } = require('pg');
+
+let pool = null;
+function getPool() {
+  if (!pool && process.env.DATABASE_URL) {
+    pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  }
+  return pool;
+}
 
 // GET /account
 router.get('/', (req, res) => {
@@ -16,22 +25,28 @@ router.get('/tier', async (req, res) => {
 
   const tierInfo = await getPortalTier(portalId);
 
-  // Calculate trial days left
-  let trialDaysLeft = 0;
-  if (tierInfo.tier === 'trial') {
-    // Get trial start from DB
-    trialDaysLeft = tierInfo.trialDaysLeft || 14;
+  // Get trial_started_at from DB
+  let trial_started_at = null;
+  try {
+    const p = getPool();
+    if (p) {
+      const result = await p.query(
+        'SELECT trial_started_at FROM portal_tiers WHERE portal_id = $1',
+        [String(portalId)]
+      );
+      trial_started_at = result.rows[0]?.trial_started_at || null;
+    }
+  } catch (err) {
+    console.error('[Account] Get trial date error:', err.message);
   }
 
-  res.json({ ...tierInfo, trialDaysLeft });
+  res.json({ ...tierInfo, trial_started_at });
 });
 
 // POST /account/upgrade-request
 router.post('/upgrade-request', async (req, res) => {
-  const { portalId, tier, name, email, message } = req.body;
+  const { portalId, tier, name, email } = req.body;
   console.log(`[Account] Upgrade request from portal ${portalId}: ${name} <${email}> wants ${tier}`);
-  console.log(`[Account] Message: ${message}`);
-  // TODO: Send email notification to admin
   res.json({ ok: true });
 });
 
