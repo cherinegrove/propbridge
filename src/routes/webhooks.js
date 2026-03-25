@@ -5,15 +5,45 @@ const { getClient } = require('../services/hubspotClient');
 const { sync }      = require('../services/syncService');
 const { getRules }  = require('./settings');
 
-// Deduplicate rapid updates - track recently processed
+// Track changes PropBridge itself made so we don't re-sync them
+// Key: `portalId-objectType-objectId-propertyName`, Value: timestamp
+const propBridgeWrites = new Map();
+const WRITE_WINDOW_MS  = 15000; // Ignore webhooks within 15s of our own write
+
+function markOurWrite(portalId, objectType, objectId, properties) {
+  const now = Date.now();
+  for (const prop of Object.keys(properties)) {
+    const key = `${portalId}-${objectType}-${objectId}-${prop}`;
+    propBridgeWrites.set(key, now);
+  }
+  // Clean up old entries
+  if (propBridgeWrites.size > 5000) {
+    const cutoff = now - WRITE_WINDOW_MS * 2;
+    for (const [k, v] of propBridgeWrites) {
+      if (v < cutoff) propBridgeWrites.delete(k);
+    }
+  }
+}
+
+function isOurWrite(portalId, objectType, objectId, propertyName) {
+  const key       = `${portalId}-${objectType}-${objectId}-${propertyName}`;
+  const writeTime = propBridgeWrites.get(key);
+  if (!writeTime) return false;
+  const isRecent = Date.now() - writeTime < WRITE_WINDOW_MS;
+  if (isRecent) {
+    console.log(`[Webhooks] Skipping ${key} — triggered by PropBridge own write`);
+  }
+  return isRecent;
+}
+
+// Dedup rapid external updates
 const recentlyProcessed = new Map();
-const DEDUP_WINDOW_MS = 5000; // 5 second dedup window
+const DEDUP_WINDOW_MS   = 5000;
 
 function isDuplicate(key) {
   const lastTime = recentlyProcessed.get(key);
   if (lastTime && Date.now() - lastTime < DEDUP_WINDOW_MS) return true;
   recentlyProcessed.set(key, Date.now());
-  // Clean up old entries
   if (recentlyProcessed.size > 1000) {
     const cutoff = Date.now() - DEDUP_WINDOW_MS * 2;
     for (const [k, v] of recentlyProcessed) {
@@ -34,7 +64,7 @@ router.post('/receive', async (req, res) => {
     console.log('[Webhooks] Sample event:', JSON.stringify(events[0]));
   }
 
-  // Small delay to let HubSpot settle on the latest value (fixes race condition)
+  // Delay to let HubSpot settle on latest value
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   const byPortal = {};
@@ -54,7 +84,7 @@ router.post('/receive', async (req, res) => {
 });
 
 async function processPortalEvents(portalId, events) {
-  const rules = await getRules(portalId);
+  const rules       = await getRules(portalId);
   const activeRules = rules.filter(r => r.enabled);
   if (!activeRules.length) {
     console.log(`[Webhooks] No active rules for portal ${portalId}`);
@@ -77,7 +107,7 @@ async function processPortalEvents(portalId, events) {
     let objectType = event.objectType;
     if (!objectType && event.subscriptionType) {
       const prefix = event.subscriptionType.split('.')[0];
-      objectType = normalizeObjectType(prefix);
+      objectType   = normalizeObjectType(prefix);
     }
 
     console.log(`[Webhooks] ${objectType} ${objectId} - ${propertyName} changed to "${propertyValue}"`);
@@ -87,10 +117,15 @@ async function processPortalEvents(portalId, events) {
       continue;
     }
 
-    // Deduplicate rapid updates
+    // Skip if this change was made by PropBridge itself (prevents bidirectional loop)
+    if (isOurWrite(portalId, objectType, objectId, propertyName)) {
+      continue;
+    }
+
+    // Dedup rapid external changes
     const dedupKey = `${portalId}-${objectType}-${objectId}-${propertyName}`;
     if (isDuplicate(dedupKey)) {
-      console.log(`[Webhooks] Duplicate event skipped: ${dedupKey}`);
+      console.log(`[Webhooks] Duplicate skipped: ${dedupKey}`);
       continue;
     }
 
@@ -127,7 +162,9 @@ async function processPortalEvents(portalId, events) {
           mappings:         rule.mappings,
           skipIfHasValue:   rule.skipIfHasValue === 'true',
           associationRule:  rule.assocRule || 'all',
-          associationLabel: rule.assocLabel || ''
+          associationLabel: rule.assocLabel || '',
+          // Pass write tracker so syncService can mark our writes
+          onWrite: (tgtType, tgtId, props) => markOurWrite(portalId, tgtType, tgtId, props)
         });
 
         console.log(`[Webhooks] Rule "${rule.name}" synced ${result.updated} record(s) - status: ${result.status}`);
@@ -140,18 +177,26 @@ async function processPortalEvents(portalId, events) {
 
 function normalizeObjectType(raw) {
   const map = {
-    'contact':   'contacts',
-    'company':   'companies',
-    'deal':      'deals',
-    'ticket':    'tickets',
-    'lead':      'leads',
-    'product':   'products',
-    'project':   'projects',
-    'contacts':  'contacts',
-    'companies': 'companies',
-    'deals':     'deals',
-    'tickets':   'tickets',
-    'projects':  'projects'
+    'contact':   'contacts',   'contacts':   'contacts',
+    'company':   'companies',  'companies':  'companies',
+    'deal':      'deals',      'deals':      'deals',
+    'ticket':    'tickets',    'tickets':    'tickets',
+    'lead':      'leads',      'leads':      'leads',
+    'product':   'products',   'products':   'products',
+    'line_item': 'line_items', 'line_items': 'line_items',
+    'quote':     'quotes',     'quotes':     'quotes',
+    'task':      'tasks',      'tasks':      'tasks',
+    'call':      'calls',      'calls':      'calls',
+    'meeting':   'meetings',   'meetings':   'meetings',
+    'note':      'notes',      'notes':      'notes',
+    'email':     'emails',     'emails':     'emails',
+    'appointment': 'appointments', 'appointments': 'appointments',
+    'course':    'courses',    'courses':    'courses',
+    'listing':   'listings',   'listings':   'listings',
+    'service':   'services',   'services':   'services',
+    'invoice':   'invoices',   'invoices':   'invoices',
+    'order':     'orders',     'orders':     'orders',
+    'goal':      'goals',      'goals':      'goals'
   };
   return map[raw?.toLowerCase()] || raw?.toLowerCase();
 }
