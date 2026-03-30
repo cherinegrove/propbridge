@@ -1,15 +1,14 @@
-// src/routes/webhooks.js - ENHANCED VERSION
-
+// src/routes/webhooks.js
 const express       = require('express');
 const router        = express.Router();
 const { getClient } = require('../services/hubspotClient');
 const { sync }      = require('../services/syncService');
 const { getRules }  = require('./settings');
-const pool          = require('../db');
 
 // Track changes PropBridge itself made so we don't re-sync them
+// Key: `portalId-objectType-objectId-propertyName`, Value: timestamp
 const propBridgeWrites = new Map();
-const WRITE_WINDOW_MS  = 15000;
+const WRITE_WINDOW_MS  = 15000; // Ignore webhooks within 15s of our own write
 
 function markOurWrite(portalId, objectType, objectId, properties) {
   const now = Date.now();
@@ -17,6 +16,7 @@ function markOurWrite(portalId, objectType, objectId, properties) {
     const key = `${portalId}-${objectType}-${objectId}-${prop}`;
     propBridgeWrites.set(key, now);
   }
+  // Clean up old entries
   if (propBridgeWrites.size > 5000) {
     const cutoff = now - WRITE_WINDOW_MS * 2;
     for (const [k, v] of propBridgeWrites) {
@@ -36,6 +36,7 @@ function isOurWrite(portalId, objectType, objectId, propertyName) {
   return isRecent;
 }
 
+// Dedup rapid external updates
 const recentlyProcessed = new Map();
 const DEDUP_WINDOW_MS   = 5000;
 
@@ -52,43 +53,7 @@ function isDuplicate(key) {
   return false;
 }
 
-// Store sync errors in database for user notification
-async function logSyncError(portalId, ruleName, errorType, errorMessage, objectType) {
-  try {
-    const errorKey = `${portalId}-${ruleName}-${errorType}`;
-    
-    // Check if we've already notified about this error recently (last 24 hours)
-    const existing = await pool.query(
-      `SELECT created_at FROM sync_errors 
-       WHERE error_key = $1 AND created_at > NOW() - INTERVAL '24 hours'
-       ORDER BY created_at DESC LIMIT 1`,
-      [errorKey]
-    );
-    
-    if (existing.rows.length > 0) {
-      // Update count instead of creating new record
-      await pool.query(
-        `UPDATE sync_errors SET error_count = error_count + 1, last_seen = NOW()
-         WHERE error_key = $1 AND created_at > NOW() - INTERVAL '24 hours'`,
-        [errorKey]
-      );
-      return;
-    }
-    
-    // Create new error record
-    await pool.query(
-      `INSERT INTO sync_errors 
-       (portal_id, rule_name, error_type, error_message, object_type, error_key, error_count, created_at, last_seen)
-       VALUES ($1, $2, $3, $4, $5, $6, 1, NOW(), NOW())`,
-      [portalId, ruleName, errorType, errorMessage, objectType, errorKey]
-    );
-    
-    console.log(`[Webhooks] Logged sync error for portal ${portalId}: ${errorType}`);
-  } catch (err) {
-    console.error('[Webhooks] Failed to log sync error:', err.message);
-  }
-}
-
+// POST /webhooks/receive
 router.post('/receive', async (req, res) => {
   res.status(200).send('ok');
 
@@ -99,6 +64,7 @@ router.post('/receive', async (req, res) => {
     console.log('[Webhooks] Sample event:', JSON.stringify(events[0]));
   }
 
+  // Delay to let HubSpot settle on latest value
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   const byPortal = {};
@@ -151,10 +117,12 @@ async function processPortalEvents(portalId, events) {
       continue;
     }
 
+    // Skip if this change was made by PropBridge itself (prevents bidirectional loop)
     if (isOurWrite(portalId, objectType, objectId, propertyName)) {
       continue;
     }
 
+    // Dedup rapid external changes
     const dedupKey = `${portalId}-${objectType}-${objectId}-${propertyName}`;
     if (isDuplicate(dedupKey)) {
       console.log(`[Webhooks] Duplicate skipped: ${dedupKey}`);
@@ -195,27 +163,19 @@ async function processPortalEvents(portalId, events) {
           skipIfHasValue:   rule.skipIfHasValue === 'true',
           associationRule:  rule.assocRule || 'all',
           associationLabel: rule.assocLabel || '',
+          // Pass write tracker so syncService can mark our writes
           onWrite: (tgtType, tgtId, props) => markOurWrite(portalId, tgtType, tgtId, props)
         });
 
         console.log(`[Webhooks] Rule "${rule.name}" synced ${result.updated} record(s) - status: ${result.status}`);
         
-        // Log errors for user notification
+        // Log errors if any (for debugging in Railway logs)
         if (result.errors && result.errors.length > 0) {
-          for (const error of result.errors) {
-            await logSyncError(
-              portalId,
-              rule.name,
-              error.type || 'unknown',
-              error.message,
-              targetObjectType
-            );
-          }
+          console.error(`[Webhooks] Rule "${rule.name}" errors:`, JSON.stringify(result.errors));
         }
         
       } catch (err) {
         console.error(`[Webhooks] Rule "${rule.name}" failed:`, err.message);
-        await logSyncError(portalId, rule.name, 'sync_failed', err.message, objectType);
       }
     }
   }
