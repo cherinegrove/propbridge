@@ -63,7 +63,7 @@ async function setLastSyncTime(portalId, objectType) {
   }
 }
 
-// Get all portals that have active sync rules for Contacts, Leads or Projects
+// Get all portals that have active sync rules (for any object type)
 async function getPortalsWithPollingRules() {
   const p = getPool();
   if (!p) {
@@ -77,16 +77,17 @@ async function getPortalsWithPollingRules() {
     
     const portalsWithPollingRules = [];
     
+    // Object types we poll
+    const polledObjects = ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects'];
+    
     for (const row of result.rows) {
       const portalId = row.portal_id;
       const rules = row.rules || [];
       
-      // Check if any rule involves contacts, leads or projects
+      // Check if any rule involves any of our polled objects
       const hasPollingRule = rules.some(rule => 
         rule.enabled && 
-        (rule.sourceObject === 'contacts' || rule.targetObject === 'contacts' ||
-         rule.sourceObject === 'leads' || rule.targetObject === 'leads' ||
-         rule.sourceObject === 'projects' || rule.targetObject === 'projects')
+        (polledObjects.includes(rule.sourceObject) || polledObjects.includes(rule.targetObject))
       );
       
       if (hasPollingRule) {
@@ -135,29 +136,48 @@ async function getSyncRulesForPolling(portalId, objectType) {
   }
 }
 
-// Fetch changed records since last sync
+// Fetch changed records since last sync using Search API
 async function getChangedRecords(client, objectType, sinceTime) {
   try {
-    const response = await client.crm.objects.basicApi.getPage(
-      objectType,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      false
-    );
+    // Convert sinceTime to timestamp in milliseconds
+    const sinceTimestamp = new Date(sinceTime).getTime();
     
-    const allRecords = response.results || [];
+    // Use search API to filter by last modified date
+    const searchRequest = {
+      filterGroups: [{
+        filters: [{
+          propertyName: 'hs_lastmodifieddate',
+          operator: 'GTE', // Greater than or equal
+          value: sinceTimestamp.toString()
+        }]
+      }],
+      sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
+      properties: ['hs_object_id', 'hs_lastmodifieddate'],
+      limit: 100
+    };
     
-    // Filter to only records modified since last sync
-    const changedRecords = allRecords.filter(record => {
-      const lastModified = record.properties.hs_lastmodifieddate;
-      return lastModified && new Date(lastModified) > new Date(sinceTime);
-    });
+    let allChangedRecords = [];
+    let after = undefined;
     
-    console.log(`[Polling] Found ${changedRecords.length} changed ${objectType} records (out of ${allRecords.length} total)`);
-    return changedRecords;
+    // Paginate through all results
+    do {
+      const response = await client.crm.objects.searchApi.doSearch(objectType, {
+        ...searchRequest,
+        after
+      });
+      
+      allChangedRecords = allChangedRecords.concat(response.results || []);
+      after = response.paging?.next?.after;
+      
+      // Safety limit: stop after 1000 records
+      if (allChangedRecords.length >= 1000) {
+        console.log(`[Polling] ⚠️ Reached 1000 record limit for ${objectType}`);
+        break;
+      }
+    } while (after);
+    
+    console.log(`[Polling] Found ${allChangedRecords.length} changed ${objectType} records`);
+    return allChangedRecords;
     
   } catch (err) {
     console.error(`[Polling] Error fetching ${objectType}:`, err.message);
@@ -259,6 +279,21 @@ async function runPollingCycle() {
       const contactsResult = await pollObjectType(portalId, 'contacts');
       totalSynced += contactsResult.synced;
       totalErrors += contactsResult.errors;
+      
+      // Poll Companies
+      const companiesResult = await pollObjectType(portalId, 'companies');
+      totalSynced += companiesResult.synced;
+      totalErrors += companiesResult.errors;
+      
+      // Poll Deals
+      const dealsResult = await pollObjectType(portalId, 'deals');
+      totalSynced += dealsResult.synced;
+      totalErrors += dealsResult.errors;
+      
+      // Poll Tickets
+      const ticketsResult = await pollObjectType(portalId, 'tickets');
+      totalSynced += ticketsResult.synced;
+      totalErrors += ticketsResult.errors;
       
       // Poll Leads
       const leadsResult = await pollObjectType(portalId, 'leads');
