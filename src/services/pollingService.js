@@ -1,10 +1,32 @@
 // src/services/pollingService.js
 const { getClient } = require('./hubspotClient');
 const { sync } = require('./syncService');
-const pool = require('../db');
+
+// Try to load database connection - adjust this path if needed
+let pool;
+try {
+  pool = require('../db');
+} catch (e) {
+  try {
+    pool = require('../database');
+  } catch (e2) {
+    try {
+      const db = require('../config/database');
+      pool = db.pool || db;
+    } catch (e3) {
+      console.error('[Polling] Could not find database module. Please check database import path.');
+    }
+  }
+}
 
 // Track last sync time per portal
 async function getLastSyncTime(portalId, objectType) {
+  if (!pool) {
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+    return yesterday.toISOString();
+  }
+  
   try {
     const result = await pool.query(
       'SELECT last_sync_time FROM polling_sync_times WHERE portal_id = $1 AND object_type = $2',
@@ -15,7 +37,6 @@ async function getLastSyncTime(portalId, objectType) {
       return result.rows[0].last_sync_time;
     }
     
-    // Default to 24 hours ago if no previous sync
     const yesterday = new Date();
     yesterday.setHours(yesterday.getHours() - 24);
     return yesterday.toISOString();
@@ -28,6 +49,8 @@ async function getLastSyncTime(portalId, objectType) {
 }
 
 async function setLastSyncTime(portalId, objectType) {
+  if (!pool) return;
+  
   const now = new Date().toISOString();
   try {
     await pool.query(
@@ -44,6 +67,8 @@ async function setLastSyncTime(portalId, objectType) {
 
 // Get all portals that have active sync rules for Leads or Projects
 async function getPortalsWithPollingRules() {
+  if (!pool) return [];
+  
   try {
     const result = await pool.query(
       `SELECT DISTINCT portal_id 
@@ -61,6 +86,8 @@ async function getPortalsWithPollingRules() {
 
 // Get sync rules for a specific portal and object type
 async function getSyncRulesForPolling(portalId, objectType) {
+  if (!pool) return [];
+  
   try {
     const result = await pool.query(
       `SELECT * FROM sync_rules 
@@ -94,12 +121,12 @@ async function getChangedRecords(client, objectType, sinceTime) {
   try {
     const response = await client.crm.objects.basicApi.getPage(
       objectType,
-      undefined, // limit - use default
-      undefined, // after - pagination
-      undefined, // properties - get all
-      undefined, // propertiesWithHistory
-      undefined, // associations
-      false // archived
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false
     );
     
     const allRecords = response.results || [];
@@ -230,6 +257,11 @@ async function runPollingCycle() {
 
 // Initialize polling sync times table
 async function initPollingTable() {
+  if (!pool) {
+    console.log('[Polling] No database connection - polling will work with 24hr lookback only');
+    return;
+  }
+  
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS polling_sync_times (
