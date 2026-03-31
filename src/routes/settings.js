@@ -457,5 +457,59 @@ router.post('/rules/sync-webhooks', async (req, res) => {
   }
 });
 
+// GET /settings/test-object-access - Test if we can write to a specific object
+router.get('/test-object-access', async (req, res) => {
+  const { portalId, objectType } = req.query;
+  
+  if (!portalId || !objectType) {
+    return res.status(400).json({ error: 'Missing portalId or objectType' });
+  }
+
+  try {
+    const client = await getClient(portalId);
+    
+    // Custom objects that commonly have write restrictions
+    const customObjects = ['projects', 'courses', 'listings', 'services', 'invoices', 'orders', 'goals'];
+    const isCustom = customObjects.includes(objectType.toLowerCase());
+    
+    // Try to fetch records to test read access
+    try {
+      await client.crm.objects.basicApi.getPage(objectType, 1);
+      
+      // We can read - but can we write?
+      // For custom objects on Pro plans, read works but write often doesn't
+      res.json({
+        objectType,
+        canRead: true,
+        canWrite: !isCustom, // Assume standard objects are fully writable
+        isCustom,
+        warning: isCustom ? 'Custom objects may have limited write access on Sales Hub Pro' : null,
+        recommendation: isCustom ? 'Consider one-way sync rules (read-only from this object)' : null
+      });
+      
+    } catch (err) {
+      if (err.message && (err.message.includes('credentials') || err.message.includes('auth') || err.message.includes('not found'))) {
+        res.json({
+          objectType,
+          canRead: false,
+          canWrite: false,
+          error: 'No API access to this object',
+          recommendation: 'This object may require Enterprise plan or may not exist'
+        });
+      } else {
+        throw err;
+      }
+    }
+
+  } catch (err) {
+    console.error('[Settings] Error testing object access:', err.message);
+    res.status(500).json({ 
+      error: err.message,
+      canRead: false,
+      canWrite: false
+    });
+  }
+});
+
 module.exports = router;
 module.exports.getRules = getRules;
