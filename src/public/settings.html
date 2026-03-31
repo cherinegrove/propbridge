@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PropBridge — Sync Rules</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- FIELD TYPE VALIDATION -->
+<link rel="stylesheet" href="/css/fieldTypeValidation.css">
+<script src="/js/fieldTypeValidation.js"></script>
 <style>
   :root {
     --bg: #0f0f11;
@@ -537,6 +540,15 @@
   .notif-warning { border-left: 3px solid #fbbf24; }
   .notif-error   { border-left: 3px solid var(--error); }
   .notif-success { border-left: 3px solid var(--success); }
+  
+  /* Validation feedback styling within mapping rows */
+  .mapping-validation {
+    grid-column: 1 / -1;
+    font-size: 12px;
+    margin-top: 4px;
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
 </style>
 </head>
 <body>
@@ -852,10 +864,21 @@
     }
   }
 
-  function buildPropOptions(props, selectedVal) {
+  function buildPropOptions(props, selectedVal, filterByType) {
     if (!props.length) return '<option value="">Select object first...</option>';
+    
+    let filtered = props;
+    
+    // Filter properties by compatible types if specified
+    if (filterByType && window.filterCompatibleProperties) {
+      filtered = window.filterCompatibleProperties(props, filterByType);
+    }
+    
     return '<option value="">Select property...</option>' +
-      props.map(p => `<option value="${p.name}" ${p.name === selectedVal ? 'selected' : ''}>${p.label} (${p.name})</option>`).join('');
+      filtered.map(p => {
+        const typeName = window.getTypeName ? window.getTypeName(p.type) : p.type;
+        return `<option value="${p.name}" data-type="${p.type}" ${p.name === selectedVal ? 'selected' : ''}>${p.label} (${typeName})</option>`;
+      }).join('');
   }
 
   function refreshMappingSelects() {
@@ -880,6 +903,39 @@
       <button class="btn-remove-mapping" onclick="this.parentElement.remove()">×</button>
     `;
     list.appendChild(div);
+    
+    // Add validation
+    const srcSelect = div.querySelector('.src-select');
+    const tgtSelect = div.querySelector('.tgt-select');
+    
+    // When source changes, filter target options
+    srcSelect.addEventListener('change', function() {
+      const selectedProp = sourceProps.find(p => p.name === this.value);
+      if (selectedProp && window.filterCompatibleProperties) {
+        const currentTarget = tgtSelect.value;
+        tgtSelect.innerHTML = buildPropOptions(targetProps, currentTarget, selectedProp.type);
+      }
+    });
+    
+    // When target changes, validate the mapping
+    tgtSelect.addEventListener('change', function() {
+      const srcProp = sourceProps.find(p => p.name === srcSelect.value);
+      const tgtProp = targetProps.find(p => p.name === this.value);
+      
+      if (srcProp && tgtProp && window.validateMappingUI) {
+        // Create feedback element if it doesn't exist
+        let feedback = div.querySelector('.mapping-validation');
+        if (!feedback) {
+          feedback = document.createElement('div');
+          feedback.className = 'mapping-validation';
+          div.appendChild(feedback);
+        }
+        
+        const isValid = window.validateMappingUI(srcProp, tgtProp, feedback);
+        div.classList.toggle('invalid', !isValid);
+        div.classList.toggle('valid', isValid);
+      }
+    });
   }
 
   function saveRule() {
@@ -898,15 +954,36 @@
 
     const rows = document.querySelectorAll('.mapping-row');
     const mappings = [];
+    let hasInvalidMappings = false;
+
     rows.forEach(row => {
       const src = row.querySelector('.src-select').value;
       const tgt = row.querySelector('.tgt-select').value;
+      
       if (src && tgt) {
-        const srcLabel = sourceProps.find(p => p.name === src)?.label || src;
-        const tgtLabel = targetProps.find(p => p.name === tgt)?.label || tgt;
+        // Validate mapping types
+        const srcProp = sourceProps.find(p => p.name === src);
+        const tgtProp = targetProps.find(p => p.name === tgt);
+        
+        if (srcProp && tgtProp && window.areTypesCompatible) {
+          if (!window.areTypesCompatible(srcProp.type, tgtProp.type)) {
+            hasInvalidMappings = true;
+            row.classList.add('invalid');
+            return;
+          }
+        }
+        
+        const srcLabel = srcProp?.label || src;
+        const tgtLabel = tgtProp?.label || tgt;
         mappings.push({ source: src, target: tgt, sourceLabel: srcLabel, targetLabel: tgtLabel });
       }
     });
+
+    // Check for invalid mappings
+    if (hasInvalidMappings) {
+      showToast('❌ Some mappings have incompatible field types', 'error');
+      return;
+    }
 
     if (mappings.length === 0) {
       showToast('Add at least one property mapping', 'error');
@@ -936,9 +1013,22 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ portalId, rules })
-    }).catch(() => {});
-
-    showToast(editingId ? '✓ Rule updated' : '✓ Rule saved', 'success');
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.validationErrors) {
+        // Server found validation errors
+        showToast('❌ ' + data.validationErrors[0].error, 'error');
+      } else if (data.validationWarnings) {
+        // Server found warnings but saved
+        showToast('⚠️ Saved with warnings: ' + data.validationWarnings[0].warning, '');
+      } else {
+        showToast(editingId ? '✓ Rule updated' : '✓ Rule saved', 'success');
+      }
+    })
+    .catch(() => {
+      showToast(editingId ? '✓ Rule updated' : '✓ Rule saved', 'success');
+    });
   }
 
   function saveRules() {
