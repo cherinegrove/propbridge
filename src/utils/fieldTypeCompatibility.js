@@ -31,6 +31,9 @@ const COMPATIBILITY_MAP = {
   
   // Multi-select - can map to multi-select or text
   'multiselect': ['multiselect', 'textarea'],
+  
+  // File - strict, file to file only
+  'file': ['file'],
 };
 
 /**
@@ -156,7 +159,8 @@ function getTypeName(type) {
     'bool': 'Checkbox',
     'phonenumber': 'Phone number',
     'email': 'Email',
-    'multiselect': 'Multiple checkboxes'
+    'multiselect': 'Multiple checkboxes',
+    'file': 'File'
   };
   
   return typeNames[type] || type;
