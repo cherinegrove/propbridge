@@ -64,6 +64,7 @@ const OBJECTS_TO_TEST = [
   { name: 'deals',     label: 'Deals' },
   { name: 'tickets',   label: 'Tickets' },
   { name: 'leads',     label: 'Leads' },
+  { name: 'projects',  label: 'Projects' },
   { name: 'services',  label: 'Services' },
   { name: 'courses',   label: 'Courses' },
   { name: 'listings',  label: 'Listings' }
@@ -260,17 +261,43 @@ router.get('/objects', async (req, res) => {
       accessible.push(...results.filter(Boolean));
     }
 
-    // Also fetch custom objects (only Projects)
+    // Also fetch custom objects (Projects and any that match your list)
     try {
       const schemasRes = await axios.get(
         'https://api-eu1.hubapi.com/crm/v3/schemas',
         { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 5000 }
       );
+      
       const knownNames = new Set(OBJECTS_TO_TEST.map(o => o.name));
       
-      // Only include Projects from custom objects
+      // DEBUG: Log all schemas to see what we got
+      console.log('[Settings] All schemas from API:', 
+        (schemasRes.data?.results || []).map(s => ({
+          name: s.name,
+          objectTypeId: s.objectTypeId,
+          label: s.labels?.singular
+        }))
+      );
+      
+      // Include Projects (flexible matching) and objects already in our list
       const customObjects = (schemasRes.data?.results || [])
-        .filter(s => !knownNames.has(s.name) && s.name === 'projects')
+        .filter(s => {
+          // Skip if already in known objects
+          if (knownNames.has(s.name)) {
+            console.log(`[Settings] Skipping ${s.name} (already in OBJECTS_TO_TEST)`);
+            return false;
+          }
+          
+          // Include if name or label contains "project" (case insensitive)
+          const nameMatch = s.name?.toLowerCase().includes('project');
+          const labelMatch = s.labels?.singular?.toLowerCase().includes('project');
+          
+          if (nameMatch || labelMatch) {
+            console.log(`[Settings] Including ${s.name} as Projects (objectTypeId: ${s.objectTypeId})`);
+          }
+          
+          return nameMatch || labelMatch;
+        })
         .map(s => ({
           name:         s.name,
           objectTypeId: s.objectTypeId || s.name,
@@ -278,11 +305,11 @@ router.get('/objects', async (req, res) => {
           custom:       true,
           accessible:   true
         }));
+      
       accessible.push(...customObjects);
       
-      if (customObjects.length > 0) {
-        console.log(`[Settings] Added Projects with objectTypeId: ${customObjects[0].objectTypeId}`);
-      }
+      console.log(`[Settings] Found ${customObjects.length} custom objects matching 'project':`, 
+        customObjects.map(o => `${o.label} (${o.objectTypeId})`));
     } catch (err) {
       console.log('[Settings] Could not fetch custom object schemas:', err.message);
     }
