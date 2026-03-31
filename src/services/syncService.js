@@ -213,7 +213,9 @@ async function sync(client, {
   skipIfHasValue,
   associationRule,
   associationLabel,
-  onWrite // callback to mark our writes (prevents bidirectional loops)
+  onWrite, // callback to mark our writes (prevents bidirectional loops)
+  ruleSourceObject, // The original rule's source object (for reversing mappings)
+  ruleTargetObject  // The original rule's target object (for reversing mappings)
 }) {
   console.log(`[Sync] Starting: ${sourceObjectType} ${sourceId} -> ${targetObjectType} (${direction})`);
   console.log(`[Sync] Source is ${isCustomObject(sourceObjectType) ? 'CUSTOM' : 'STANDARD'} object`);
@@ -227,8 +229,21 @@ async function sync(client, {
     warnings: []
   };
 
+  // REVERSE MAPPINGS if we're syncing in the opposite direction of the rule definition
+  let effectiveMappings = mappings;
+  if (ruleSourceObject && ruleTargetObject) {
+    const syncingInReverse = (sourceObjectType === ruleTargetObject && targetObjectType === ruleSourceObject);
+    if (syncingInReverse) {
+      console.log(`[Sync] Reversing mappings for bidirectional sync`);
+      effectiveMappings = mappings.map(m => ({
+        source: m.target,  // Swap source and target
+        target: m.source
+      }));
+    }
+  }
+
   // Always fetch fresh source properties (fixes stale value bug)
-  const srcPropNames = mappings.map(m => m.source);
+  const srcPropNames = effectiveMappings.map(m => m.source);
   let sourceProps;
   
   try {
@@ -292,7 +307,7 @@ async function sync(client, {
     try {
       let targetProps = {};
       if (direction === 'two_way' || skipIfHasValue) {
-        const tgtPropNames = mappings.map(m => m.target);
+        const tgtPropNames = effectiveMappings.map(m => m.target);
         try {
           targetProps = await getProperties(client, targetObjectType, targetId, tgtPropNames);
         } catch (err) {
@@ -308,7 +323,7 @@ async function sync(client, {
 
       const propsToUpdate = {};
 
-      for (const mapping of mappings) {
+      for (const mapping of effectiveMappings) {
         const srcVal = sourceProps[mapping.source];
         const tgtVal = targetProps[mapping.target];
 
