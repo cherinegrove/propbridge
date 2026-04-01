@@ -82,6 +82,13 @@ const SCOPES = [
 ].join(' ');
 
 function getAuthUrl() {
+  console.log('[OAuth] ===== REQUESTING SCOPES =====');
+  console.log('[OAuth] Total scopes:', SCOPES.split(' ').length);
+  console.log('[OAuth] Scopes include schemas.projects:', SCOPES.includes('crm.schemas.projects.read'));
+  console.log('[OAuth] Scopes include schemas.custom:', SCOPES.includes('crm.schemas.custom.read'));
+  console.log('[OAuth] Full scope string:', SCOPES);
+  console.log('[OAuth] ================================');
+  
   const clientId    = process.env.HUBSPOT_CLIENT_ID;
   const redirectUri = getRedirectUri();
   console.log('[OAuth] CLIENT_ID:', clientId);
@@ -111,6 +118,8 @@ async function exchangeCode(code) {
   const res = await axios.post('https://api.hubapi.com/oauth/v1/token', params.toString(), {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
+
+  console.log('[OAuth] Token received! Scopes granted:', res.data.scope);
 
   return res.data;
 }
