@@ -143,16 +143,84 @@ async function refreshToken(refreshTok) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 
+  console.log('[OAuth] Token refreshed! Expires in:', res.data.expires_in, 'seconds');
+  
   return res.data;
 }
+
+// In-memory lock to prevent multiple simultaneous refresh attempts for the same portal
+const refreshLocks = new Map();
 
 async function getClient(portalId) {
   const tokens = await tokenStore.get(portalId);
   if (!tokens || !tokens.access_token) {
     throw new Error(`No tokens for portal ${portalId}`);
   }
-  const client = new hubspot.Client({ accessToken: tokens.access_token });
-  return client;
+  
+  // Check if token is expired or about to expire (within 5 minutes)
+  // HubSpot tokens typically expire in 30 minutes (1800 seconds)
+  const expiresIn = tokens.expires_in || 1800; // Default to 30 minutes if not provided
+  const expiresAt = tokens.savedAt + (expiresIn * 1000);
+  const now = Date.now();
+  const fiveMinutes = 5 * 60 * 1000;
+  
+  // If token is still valid and not expiring soon, return client immediately
+  if (now < expiresAt - fiveMinutes) {
+    const client = new hubspot.Client({ accessToken: tokens.access_token });
+    return client;
+  }
+  
+  // Token is expired or expiring soon - need to refresh
+  console.log(`[OAuth] Token expired or expiring soon for portal ${portalId}, refreshing...`);
+  
+  // Check if a refresh is already in progress for this portal
+  if (refreshLocks.has(portalId)) {
+    console.log(`[OAuth] Refresh already in progress for portal ${portalId}, waiting...`);
+    await refreshLocks.get(portalId);
+    // After waiting, get the refreshed token from store
+    const refreshedTokens = await tokenStore.get(portalId);
+    if (refreshedTokens && refreshedTokens.access_token) {
+      return new hubspot.Client({ accessToken: refreshedTokens.access_token });
+    }
+  }
+  
+  // Create a promise for this refresh operation
+  const refreshPromise = (async () => {
+    try {
+      if (!tokens.refresh_token) {
+        throw new Error(`No refresh token available for portal ${portalId}`);
+      }
+      
+      const newTokens = await refreshToken(tokens.refresh_token);
+      
+      // Preserve the hub_id and installerEmail from the original tokens
+      await tokenStore.set(portalId, { 
+        ...newTokens, 
+        savedAt: Date.now(),
+        hub_id: tokens.hub_id || portalId,
+        installerEmail: tokens.installerEmail
+      });
+      
+      console.log(`[OAuth] ✅ Token refreshed successfully for portal ${portalId}`);
+      
+      return new hubspot.Client({ accessToken: newTokens.access_token });
+      
+    } catch (err) {
+      console.error(`[OAuth] ❌ Token refresh failed for portal ${portalId}:`, err.message);
+      
+      // If refresh fails, the user will need to reinstall
+      throw new Error(`Token refresh failed for portal ${portalId}. Please reinstall the app.`);
+      
+    } finally {
+      // Remove the lock
+      refreshLocks.delete(portalId);
+    }
+  })();
+  
+  // Store the promise so other concurrent requests can wait for it
+  refreshLocks.set(portalId, refreshPromise);
+  
+  return refreshPromise;
 }
 
 module.exports = {
