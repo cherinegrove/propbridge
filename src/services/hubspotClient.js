@@ -119,7 +119,11 @@ async function exchangeCode(code) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   });
 
-  console.log('[OAuth] Token received! Scopes granted:', res.data.scope);
+  // IMPROVED LOGGING: Show full response to debug scope issues
+  console.log('[OAuth] Token received! Full response:', JSON.stringify(res.data, null, 2));
+  console.log('[OAuth] Scopes granted:', res.data.scope);
+  console.log('[OAuth] Token type:', res.data.token_type);
+  console.log('[OAuth] Expires in:', res.data.expires_in, 'seconds');
 
   return res.data;
 }
