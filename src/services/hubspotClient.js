@@ -219,7 +219,6 @@ async function getAssociations(client, fromObjectType, fromObjectId, toObjectTyp
     }
   }
 }
-
 async function sync(client, {
   portalId, // ADDED: Need portalId to fetch tokens for custom objects
   sourceObjectType,
