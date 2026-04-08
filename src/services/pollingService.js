@@ -280,7 +280,6 @@ async function pollObjectType(portalId, objectType) {
               ruleSourceObject: rule.sourceObject,  // ADDED
               ruleTargetObject: rule.targetObject   // ADDED
             });
-            });
             
             if (result.status === 'success') {
               syncedCount += result.updated;
