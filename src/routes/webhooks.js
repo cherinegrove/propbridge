@@ -1,4 +1,4 @@
-// src/routes/webhooks.js
+// src/routes/webhooks.js - OPTIMIZED VERSION
 const express = require('express');
 const router = express.Router();
 const { getClient } = require('../services/hubspotClient');
@@ -106,8 +106,6 @@ async function processWebhookEvent(event) {
     return;
   }
 
-  console.log(`[Webhooks] ${pluralObjectType} ${objectId} - ${propertyName} changed to "${propertyValue}"`);
-
   // Get sync rules for this portal
   const { getRules } = require('./settings');
   const rules = await getRules(portalId);
@@ -117,33 +115,38 @@ async function processWebhookEvent(event) {
     return;
   }
 
-  // Find rules that involve this object type and property
+  // 🆕 OPTIMIZATION 1: FIELD-LEVEL FILTERING
+  // Find rules that involve this SPECIFIC object type AND property (not just any field)
   const matchingRules = rules.filter(rule => {
     if (!rule.enabled) return false;
     
-    // Check if this object/property is in the rule's mappings
-    const isSource = rule.sourceObject === pluralObjectType && 
-                     rule.mappings.some(m => m.source === propertyName);
+    // Check if this object/property is MAPPED in the rule's field mappings
+    const isSourceMapped = rule.sourceObject === pluralObjectType && 
+                           rule.mappings.some(m => m.source === propertyName);
     
-    const isTarget = rule.direction === 'two_way' && 
-                     rule.targetObject === pluralObjectType && 
-                     rule.mappings.some(m => m.target === propertyName);
+    const isTargetMapped = rule.direction === 'two_way' && 
+                           rule.targetObject === pluralObjectType && 
+                           rule.mappings.some(m => m.target === propertyName);
     
-    return isSource || isTarget;
+    return isSourceMapped || isTargetMapped;
   });
 
   if (matchingRules.length === 0) {
-    console.log(`[Webhooks] No matching rules for ${pluralObjectType}.${propertyName}`);
+    console.log(`[Webhooks] ⏭️ Skipping ${pluralObjectType}.${propertyName} - not in any mapped fields`);
     return;
   }
 
-  console.log(`[Webhooks] Found ${matchingRules.length} matching rule(s)`);
+  console.log(`[Webhooks] Found ${matchingRules.length} matching rule(s) for ${pluralObjectType}.${propertyName}`);
+  console.log(`[Webhooks] ${pluralObjectType} ${objectId} - ${propertyName} changed to "${propertyValue}"`);
 
   // Get HubSpot client
   const client = await getClient(portalId);
 
-  // Process each matching rule
-  for (const rule of matchingRules) {
+  // 🆕 OPTIMIZATION 2: RATE LIMITING
+  // Process each matching rule with delays to prevent hitting rate limits
+  for (let i = 0; i < matchingRules.length; i++) {
+    const rule = matchingRules[i];
+    
     try {
       // Determine sync direction based on which object changed
       let sourceObjectType, targetObjectType;
@@ -161,7 +164,7 @@ async function processWebhookEvent(event) {
       console.log(`[Sync] Starting: ${sourceObjectType} ${objectId} -> ${targetObjectType} (${rule.direction})`);
 
       const result = await sync(client, {
-        portalId, // ADDED: Pass portalId for custom object token access
+        portalId,
         sourceObjectType,
         sourceId: objectId,
         targetObjectType,
@@ -171,7 +174,6 @@ async function processWebhookEvent(event) {
         associationRule: rule.assocRule || 'all',
         associationLabel: rule.assocLabel || '',
         onWrite: markWrite,
-        // BUG FIX: Pass original rule source/target so sync can reverse mappings
         ruleSourceObject: rule.sourceObject,
         ruleTargetObject: rule.targetObject
       });
@@ -180,6 +182,11 @@ async function processWebhookEvent(event) {
 
       if (result.errors && result.errors.length > 0) {
         console.error(`[Webhooks] Rule "${rule.name}" errors:`, result.errors);
+      }
+
+      // 🆕 Add small delay between rules to prevent rate limiting (150ms)
+      if (i < matchingRules.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
 
     } catch (err) {
