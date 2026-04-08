@@ -1,4 +1,4 @@
-// src/services/pollingService.js
+// src/services/pollingService.js - OPTIMIZED VERSION
 const { getClient } = require('./hubspotClient');
 const { sync } = require('./syncService');
 const { Pool } = require('pg');
@@ -136,23 +136,45 @@ async function getSyncRulesForPolling(portalId, objectType) {
   }
 }
 
-// Fetch changed records since last sync using Search API
-async function getChangedRecords(client, objectType, sinceTime) {
+// 🆕 HELPER: Get all mapped field names from rules for an object type
+function getMappedFieldsForObjectType(rules, objectType) {
+  const mappedFields = new Set();
+  
+  for (const rule of rules) {
+    if (rule.sourceObject === objectType) {
+      // This object is the source - include all source fields
+      rule.mappings.forEach(m => mappedFields.add(m.source));
+    }
+    
+    if (rule.targetObject === objectType && rule.direction === 'two_way') {
+      // This object is the target in a two-way sync - include all target fields
+      rule.mappings.forEach(m => mappedFields.add(m.target));
+    }
+  }
+  
+  return Array.from(mappedFields);
+}
+
+// 🆕 OPTIMIZATION 1: Fetch changed records with ONLY mapped fields
+async function getChangedRecords(client, objectType, sinceTime, mappedFields) {
   try {
     // Convert sinceTime to timestamp in milliseconds
     const sinceTimestamp = new Date(sinceTime).getTime();
+    
+    // 🆕 Request only the fields we actually care about (plus hs_object_id and hs_lastmodifieddate)
+    const propertiesToFetch = ['hs_object_id', 'hs_lastmodifieddate', ...mappedFields];
     
     // Use search API to filter by last modified date
     const searchRequest = {
       filterGroups: [{
         filters: [{
           propertyName: 'hs_lastmodifieddate',
-          operator: 'GTE', // Greater than or equal
+          operator: 'GTE',
           value: sinceTimestamp.toString()
         }]
       }],
       sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
-      properties: ['hs_object_id', 'hs_lastmodifieddate'],
+      properties: propertiesToFetch,
       limit: 100
     };
     
@@ -185,7 +207,12 @@ async function getChangedRecords(client, objectType, sinceTime) {
   }
 }
 
-// Poll and sync a specific object type for a portal
+// 🆕 HELPER: Delay function for rate limiting
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 🆕 OPTIMIZATION 2: Poll and sync with batching and rate limiting
 async function pollObjectType(portalId, objectType) {
   console.log(`[Polling] Starting poll for ${objectType} in portal ${portalId}`);
   
@@ -198,55 +225,83 @@ async function pollObjectType(portalId, objectType) {
       return { synced: 0, errors: 0 };
     }
     
+    // 🆕 Get only the fields that are actually mapped in our rules
+    const mappedFields = getMappedFieldsForObjectType(rules, objectType);
+    console.log(`[Polling] Watching ${mappedFields.length} mapped fields: ${mappedFields.join(', ')}`);
+    
     const lastSync = await getLastSyncTime(portalId, objectType);
     console.log(`[Polling] Checking ${objectType} modified since ${lastSync}`);
     
-    const changedRecords = await getChangedRecords(client, objectType, lastSync);
+    const changedRecords = await getChangedRecords(client, objectType, lastSync, mappedFields);
     
     let syncedCount = 0;
     let errorCount = 0;
     
-    // Process each changed record
-    for (const record of changedRecords) {
-      const recordId = record.id;
+    // 🆕 OPTIMIZATION 3: Process in batches of 20 with delays
+    const BATCH_SIZE = 20;
+    const DELAY_BETWEEN_SYNCS = 150; // 150ms between each sync
+    const DELAY_BETWEEN_BATCHES = 2000; // 2 seconds between batches
+    
+    for (let batchStart = 0; batchStart < changedRecords.length; batchStart += BATCH_SIZE) {
+      const batch = changedRecords.slice(batchStart, batchStart + BATCH_SIZE);
+      const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(changedRecords.length / BATCH_SIZE);
       
-      // Apply all matching sync rules
-      for (const rule of rules) {
-        try {
-          let sourceObjectType = rule.sourceObject;
-          let sourceId = recordId;
-          let targetObjectType = rule.targetObject;
-          
-          // If this is a two-way rule and the record is the target object
-          if (rule.direction === 'two_way' && rule.targetObject === objectType) {
-            sourceObjectType = rule.targetObject;
-            targetObjectType = rule.sourceObject;
+      console.log(`[Polling] Processing batch ${batchNum}/${totalBatches} (${batch.length} records)`);
+      
+      // Process each record in the batch
+      for (let i = 0; i < batch.length; i++) {
+        const record = batch[i];
+        const recordId = record.id;
+        
+        // Apply all matching sync rules
+        for (const rule of rules) {
+          try {
+            let sourceObjectType = rule.sourceObject;
+            let sourceId = recordId;
+            let targetObjectType = rule.targetObject;
+            
+            // If this is a two-way rule and the record is the target object
+            if (rule.direction === 'two_way' && rule.targetObject === objectType) {
+              sourceObjectType = rule.targetObject;
+              targetObjectType = rule.sourceObject;
+            }
+            
+            const result = await sync(client, {
+              portalId,
+              sourceObjectType,
+              sourceId,
+              targetObjectType,
+              direction: rule.direction,
+              mappings: rule.mappings,
+              skipIfHasValue: rule.skipIfHasValue === 'true',
+              associationRule: rule.assocRule || 'all',
+              associationLabel: rule.assocLabel || ''
+            });
+            
+            if (result.status === 'success') {
+              syncedCount += result.updated;
+              console.log(`[Polling] Rule "${rule.name}" synced ${result.updated} record(s)`);
+            }
+            
+            if (result.errors && result.errors.length > 0) {
+              errorCount += result.errors.length;
+            }
+            
+            // 🆕 Add delay between syncs to prevent rate limiting
+            await delay(DELAY_BETWEEN_SYNCS);
+            
+          } catch (err) {
+            console.error(`[Polling] Rule "${rule.name}" failed:`, err.message);
+            errorCount++;
           }
-          
-          const result = await sync(client, {
-            sourceObjectType,
-            sourceId,
-            targetObjectType,
-            direction: rule.direction,
-            mappings: rule.mappings,
-            skipIfHasValue: rule.skipIfHasValue === 'true',
-            associationRule: rule.assocRule || 'all',
-            associationLabel: rule.assocLabel || ''
-          });
-          
-          if (result.status === 'success') {
-            syncedCount += result.updated;
-            console.log(`[Polling] Rule "${rule.name}" synced ${result.updated} record(s)`);
-          }
-          
-          if (result.errors && result.errors.length > 0) {
-            errorCount += result.errors.length;
-          }
-          
-        } catch (err) {
-          console.error(`[Polling] Rule "${rule.name}" failed:`, err.message);
-          errorCount++;
         }
+      }
+      
+      // 🆕 Add longer delay between batches
+      if (batchStart + BATCH_SIZE < changedRecords.length) {
+        console.log(`[Polling] Batch ${batchNum} complete. Waiting ${DELAY_BETWEEN_BATCHES}ms before next batch...`);
+        await delay(DELAY_BETWEEN_BATCHES);
       }
     }
     
