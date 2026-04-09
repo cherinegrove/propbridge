@@ -1297,10 +1297,9 @@
   fetch('/settings/rules?portalId=' + portalId)
     .then(r => r.json())
     .then(data => {
-      if (data.rules?.length) {
-        rules = data.rules;
-        saveRules();
-      }
+      // ALWAYS update rules from server, even if empty array
+      rules = data.rules || [];
+      saveRules();
       render();
     })
     .catch(() => render());
