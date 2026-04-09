@@ -32,9 +32,9 @@ const TIERS = {
   FREE: {
     name: 'FREE',
     price: 0,
-    maxMappings: 5,
+    maxMappings: Infinity,
     maxRules: Infinity,
-    allowedObjects: ['contacts', 'companies', 'deals'],
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects'],
     trialDays: null
   },
   TRIAL: {
