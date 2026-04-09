@@ -1,257 +1,329 @@
-// src/routes/stripe.js - Stripe webhook handler for subscription management
-
-const express = require('express');
-const router = express.Router();
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// src/services/tierService.js - UPDATED VERSION
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+let pool = null;
 
-// Stripe webhook endpoint
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
-  let event;
-  
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-  } catch (err) {
-    console.error('[Stripe] Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-  
-  console.log(`[Stripe] Event received: ${event.type}`);
-  
-  // Handle the event
-  try {
-    switch (event.type) {
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdate(event.data.object);
-        break;
-        
-      case 'customer.subscription.deleted':
-        await handleSubscriptionCanceled(event.data.object);
-        break;
-        
-      case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object);
-        break;
-        
-      case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object);
-        break;
-        
-      case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object);
-        break;
-        
-      default:
-        console.log(`[Stripe] Unhandled event type: ${event.type}`);
-    }
-  } catch (err) {
-    console.error(`[Stripe] Error handling ${event.type}:`, err.message);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-  
-  res.json({ received: true });
-});
-
-// Handle subscription creation or update
-async function handleSubscriptionUpdate(subscription) {
-  const customerId = subscription.customer;
-  const subscriptionId = subscription.id;
-  const status = subscription.status;
-  
-  // Map Stripe price ID to tier
-  const priceToTier = {
-    [process.env.STRIPE_PRICE_STARTER]: 'STARTER',
-    [process.env.STRIPE_PRICE_PRO]: 'PRO',
-    [process.env.STRIPE_PRICE_BUSINESS]: 'BUSINESS'
-  };
-  
-  const priceId = subscription.items.data[0]?.price?.id;
-  const tier = priceToTier[priceId];
-  
-  if (!tier) {
-    console.error(`[Stripe] Unknown price ID: ${priceId}`);
-    return;
-  }
-  
-  // Only update tier if subscription is active
-  if (status === 'active' || status === 'trialing') {
-    await pool.query(
-      `UPDATE portal_tiers 
-       SET tier = $1, 
-           stripe_customer_id = $2,
-           stripe_subscription_id = $3,
-           stripe_subscription_status = $4,
-           updated_at = NOW()
-       WHERE stripe_customer_id = $2`,
-      [tier, customerId, subscriptionId, status]
-    );
-    
-    console.log(`[Stripe] ✅ Subscription updated: ${customerId} -> ${tier} (${status})`);
-  } else {
-    // If not active, just update status
-    await pool.query(
-      `UPDATE portal_tiers 
-       SET stripe_subscription_status = $1,
-           updated_at = NOW()
-       WHERE stripe_customer_id = $2`,
-      [status, customerId]
-    );
-    
-    console.log(`[Stripe] ⚠️ Subscription status updated: ${customerId} -> ${status}`);
-  }
-}
-
-// Handle subscription cancellation
-async function handleSubscriptionCanceled(subscription) {
-  const customerId = subscription.customer;
-  
-  // Downgrade to FREE tier
-  await pool.query(
-    `UPDATE portal_tiers 
-     SET tier = 'FREE',
-         stripe_subscription_id = NULL,
-         stripe_subscription_status = 'canceled',
-         updated_at = NOW()
-     WHERE stripe_customer_id = $1`,
-    [customerId]
-  );
-  
-  console.log(`[Stripe] ⛔ Subscription canceled: ${customerId} -> FREE`);
-}
-
-// Handle payment failure
-async function handlePaymentFailed(invoice) {
-  const customerId = invoice.customer;
-  
-  // Mark subscription as past_due
-  await pool.query(
-    `UPDATE portal_tiers 
-     SET stripe_subscription_status = 'past_due',
-         updated_at = NOW()
-     WHERE stripe_customer_id = $1`,
-    [customerId]
-  );
-  
-  console.log(`[Stripe] ⚠️ Payment failed: ${customerId} - marked as past_due`);
-}
-
-// Handle successful payment
-async function handlePaymentSucceeded(invoice) {
-  const customerId = invoice.customer;
-  
-  // If subscription was past_due, mark as active
-  await pool.query(
-    `UPDATE portal_tiers 
-     SET stripe_subscription_status = 'active',
-         updated_at = NOW()
-     WHERE stripe_customer_id = $1 AND stripe_subscription_status = 'past_due'`,
-    [customerId]
-  );
-  
-  console.log(`[Stripe] ✅ Payment succeeded: ${customerId} - marked as active`);
-}
-
-// Handle checkout session completion (for new customers)
-async function handleCheckoutCompleted(session) {
-  const customerId = session.customer;
-  const clientReferenceId = session.client_reference_id; // This should be the portalId
-  
-  if (!clientReferenceId) {
-    console.error('[Stripe] No client_reference_id in checkout session');
-    return;
-  }
-  
-  // Link the stripe customer to the portal
-  await pool.query(
-    `UPDATE portal_tiers 
-     SET stripe_customer_id = $1,
-         updated_at = NOW()
-     WHERE portal_id = $2`,
-    [customerId, clientReferenceId]
-  );
-  
-  console.log(`[Stripe] ✅ Checkout completed: Portal ${clientReferenceId} linked to customer ${customerId}`);
-}
-
-// API endpoint to create a checkout session (for upgrading)
-router.post('/create-checkout-session', express.json(), async (req, res) => {
-  const { portalId, priceId } = req.body;
-  
-  if (!portalId || !priceId) {
-    return res.status(400).json({ error: 'Missing portalId or priceId' });
-  }
-  
-  try {
-    // Check if portal already has a customer ID
-    const result = await pool.query(
-      'SELECT stripe_customer_id FROM portal_tiers WHERE portal_id = $1',
-      [portalId]
-    );
-    
-    let customerId = result.rows[0]?.stripe_customer_id;
-    
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId || undefined,
-      client_reference_id: portalId,
-      payment_method_types: ['card'],
-      line_items: [{
-        price: priceId,
-        quantity: 1
-      }],
-      mode: 'subscription',
-      success_url: `${process.env.APP_URL}/settings?upgrade=success`,
-      cancel_url: `${process.env.APP_URL}/settings?upgrade=canceled`
+function getPool() {
+  if (!pool && process.env.DATABASE_URL) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
     });
-    
-    res.json({ url: session.url });
-    
-  } catch (err) {
-    console.error('[Stripe] Error creating checkout session:', err.message);
-    res.status(500).json({ error: err.message });
+    pool.query(`
+      CREATE TABLE IF NOT EXISTS portal_tiers (
+        portal_id TEXT PRIMARY KEY,
+        tier TEXT NOT NULL DEFAULT 'TRIAL',
+        created_at TIMESTAMP DEFAULT NOW(),
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        stripe_subscription_status TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `).then(() => console.log('[Tiers] Table ready'))
+      .catch(err => console.error('[Tiers] Table error:', err.message));
   }
-});
+  return pool;
+}
 
-// API endpoint to create a customer portal session (for managing subscription)
-router.post('/create-portal-session', express.json(), async (req, res) => {
-  const { portalId } = req.body;
+// ✅ UPDATED TIER STRUCTURE
+const TIERS = {
+  FREE: {
+    name: 'Free',
+    price: 0,
+    maxRules: Infinity,        // Unlimited rules
+    maxMappings: 5,            // Total mappings across all rules
+    allowedObjects: ['contacts', 'companies', 'deals'],
+    trialDays: null,           // No trial expiration
+    features: {
+      polling: true,
+      webhooks: true,
+      customObjects: false,
+      apiAccess: false
+    }
+  },
   
-  if (!portalId) {
-    return res.status(400).json({ error: 'Missing portalId' });
+  TRIAL: {
+    name: 'Trial',
+    price: 0,
+    maxRules: Infinity,
+    maxMappings: 30,
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects', 'courses'],
+    trialDays: 7,              // ✅ 7 DAYS - THEN STOPS SYNCING
+    features: {
+      polling: true,
+      webhooks: true,
+      customObjects: true,
+      apiAccess: true
+    }
+  },
+  
+  STARTER: {
+    name: 'Starter',
+    price: 5,
+    maxRules: Infinity,
+    maxMappings: 10,           // ✅ 10 MAPPINGS
+    allowedObjects: ['contacts', 'companies', 'deals'],
+    trialDays: null,
+    features: {
+      polling: true,
+      webhooks: true,
+      customObjects: false,
+      apiAccess: false
+    }
+  },
+  
+  PRO: {
+    name: 'Pro',
+    price: 30,
+    maxRules: Infinity,
+    maxMappings: 30,           // ✅ 30 MAPPINGS
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects', 'courses'],
+    trialDays: null,
+    features: {
+      polling: true,
+      webhooks: true,
+      customObjects: true,
+      apiAccess: true
+    }
+  },
+  
+  BUSINESS: {
+    name: 'Business',
+    price: 50,
+    maxRules: Infinity,
+    maxMappings: 100,          // ✅ 100 MAPPINGS
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects', 'courses'],
+    trialDays: null,
+    features: {
+      polling: true,
+      webhooks: true,
+      customObjects: true,
+      apiAccess: true
+    }
+  },
+  
+  SUSPENDED: {
+    name: 'Suspended',
+    price: 0,
+    maxRules: 0,
+    maxMappings: 0,
+    allowedObjects: [],
+    trialDays: null,
+    features: {
+      polling: false,
+      webhooks: false,
+      customObjects: false,
+      apiAccess: false
+    }
   }
-  
+};
+
+async function getPortalTier(portalId) {
+  const p = getPool();
+  if (!p) return { tier: 'FREE', ...TIERS.FREE, isExpired: false, canSync: true };
+
   try {
-    const result = await pool.query(
-      'SELECT stripe_customer_id FROM portal_tiers WHERE portal_id = $1',
-      [portalId]
+    const result = await p.query(
+      'SELECT tier, created_at, stripe_customer_id, stripe_subscription_id, stripe_subscription_status FROM portal_tiers WHERE portal_id = $1',
+      [String(portalId)]
     );
-    
-    const customerId = result.rows[0]?.stripe_customer_id;
-    
-    if (!customerId) {
-      return res.status(404).json({ error: 'No Stripe customer found' });
+
+    if (!result.rows[0]) {
+      // New portal - create with TRIAL tier
+      await p.query(
+        'INSERT INTO portal_tiers (portal_id, tier, created_at) VALUES ($1, $2, NOW()) ON CONFLICT DO NOTHING',
+        [String(portalId), 'TRIAL']
+      );
+      return { 
+        tier: 'TRIAL', 
+        ...TIERS.TRIAL, 
+        isExpired: false, 
+        canSync: true,
+        trialDaysLeft: 7 
+      };
+    }
+
+    const { tier, created_at, stripe_customer_id, stripe_subscription_id, stripe_subscription_status } = result.rows[0];
+    const tierInfo = TIERS[tier] || TIERS.FREE;
+
+    let isExpired = false;
+    let trialDaysLeft = null;
+    let canSync = true;
+
+    // ✅ CHECK TRIAL EXPIRATION
+    if (tier === 'TRIAL' && created_at) {
+      const daysSinceStart = (Date.now() - new Date(created_at).getTime()) / (1000 * 60 * 60 * 24);
+      isExpired = daysSinceStart > 7;
+      trialDaysLeft = Math.max(0, Math.ceil(7 - daysSinceStart));
+      
+      if (isExpired) {
+        canSync = false; // ✅ STOPS SYNCING after 7 days
+        console.log(`[Tiers] ⛔ Trial expired for portal ${portalId} - started ${daysSinceStart.toFixed(1)} days ago`);
+      }
+    }
+
+    // FREE and paid tiers can always sync (no expiration)
+    if (tier === 'FREE' || tier === 'STARTER' || tier === 'PRO' || tier === 'BUSINESS') {
+      canSync = true;
+      isExpired = false;
+    }
+
+    // SUSPENDED cannot sync
+    if (tier === 'SUSPENDED') {
+      canSync = false;
+      isExpired = true;
+    }
+
+    return { 
+      tier, 
+      ...tierInfo, 
+      isExpired, 
+      canSync,
+      trialDaysLeft,
+      stripe_customer_id,
+      stripe_subscription_id,
+      stripe_subscription_status
+    };
+  } catch (err) {
+    console.error('[Tiers] Get tier error:', err.message);
+    return { tier: 'FREE', ...TIERS.FREE, isExpired: false, canSync: true };
+  }
+}
+
+async function setPortalTier(portalId, tier, stripeData = {}) {
+  const p = getPool();
+  if (!p) return;
+  
+  const { customerId, subscriptionId, subscriptionStatus } = stripeData;
+  
+  await p.query(`
+    INSERT INTO portal_tiers (portal_id, tier, stripe_customer_id, stripe_subscription_id, stripe_subscription_status, updated_at)
+    VALUES ($1, $2, $3, $4, $5, NOW())
+    ON CONFLICT (portal_id) DO UPDATE 
+    SET tier = $2, 
+        stripe_customer_id = COALESCE($3, portal_tiers.stripe_customer_id),
+        stripe_subscription_id = COALESCE($4, portal_tiers.stripe_subscription_id),
+        stripe_subscription_status = COALESCE($5, portal_tiers.stripe_subscription_status),
+        updated_at = NOW()
+  `, [String(portalId), tier, customerId, subscriptionId, subscriptionStatus]);
+  
+  console.log(`[Tiers] Updated portal ${portalId} to ${tier}`);
+}
+
+async function getAllPortals() {
+  const p = getPool();
+  if (!p) return [];
+  try {
+    const result = await p.query(`
+      SELECT 
+        pt.portal_id,
+        pt.tier,
+        pt.created_at,
+        pt.stripe_customer_id,
+        pt.stripe_subscription_id,
+        pt.stripe_subscription_status,
+        pt.updated_at,
+        t.data->>'hub_id' as hub_id
+      FROM portal_tiers pt
+      LEFT JOIN tokens t ON t.portal_id = pt.portal_id
+      ORDER BY pt.updated_at DESC
+    `);
+    return result.rows;
+  } catch (err) {
+    console.error('[Tiers] Get all portals error:', err.message);
+    return [];
+  }
+}
+
+// ✅ COUNT TOTAL MAPPINGS across all rules
+function countTotalMappings(rules) {
+  if (!Array.isArray(rules)) return 0;
+  
+  return rules.reduce((total, rule) => {
+    if (!rule.enabled || !rule.mappings) return total;
+    return total + rule.mappings.length;
+  }, 0);
+}
+
+// ✅ CHECK IF OBJECT TYPE IS ALLOWED
+function isObjectAllowed(tier, objectType) {
+  const tierInfo = TIERS[tier];
+  if (!tierInfo) return false;
+  
+  return tierInfo.allowedObjects.includes(objectType);
+}
+
+// ✅ UPDATED CHECK LIMITS - Enforces new structure
+async function checkLimits(portalId, rules) {
+  const tierInfo = await getPortalTier(portalId);
+
+  // ✅ CHECK IF CAN SYNC (trial expiration, suspended, etc)
+  if (!tierInfo.canSync) {
+    if (tierInfo.isExpired && tierInfo.tier === 'TRIAL') {
+      return { 
+        allowed: false, 
+        reason: 'Your 7-day trial has expired. Please upgrade to continue syncing.',
+        tierInfo
+      };
     }
     
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${process.env.APP_URL}/settings`
-    });
+    if (tierInfo.tier === 'SUSPENDED') {
+      return { 
+        allowed: false, 
+        reason: 'Your account is suspended. Please contact support.',
+        tierInfo
+      };
+    }
     
-    res.json({ url: session.url });
-    
-  } catch (err) {
-    console.error('[Stripe] Error creating portal session:', err.message);
-    res.status(500).json({ error: err.message });
+    return { 
+      allowed: false, 
+      reason: 'Cannot sync. Please check your account status.',
+      tierInfo
+    };
   }
-});
 
-module.exports = router;
+  // ✅ COUNT TOTAL MAPPINGS (not per-rule, but across all rules)
+  const totalMappings = countTotalMappings(rules);
+  
+  if (totalMappings > tierInfo.maxMappings) {
+    return {
+      allowed: false,
+      reason: `Your ${tierInfo.name} plan allows ${tierInfo.maxMappings} total mappings. You have ${totalMappings}. Please upgrade or reduce mappings.`,
+      tierInfo,
+      currentMappings: totalMappings
+    };
+  }
+
+  // ✅ CHECK OBJECT TYPE RESTRICTIONS
+  for (const rule of rules) {
+    if (!rule.enabled) continue;
+    
+    if (!isObjectAllowed(tierInfo.tier, rule.sourceObject)) {
+      return {
+        allowed: false,
+        reason: `Object type "${rule.sourceObject}" is not allowed on your ${tierInfo.name} plan. Please upgrade to use this object type.`,
+        tierInfo
+      };
+    }
+    
+    if (!isObjectAllowed(tierInfo.tier, rule.targetObject)) {
+      return {
+        allowed: false,
+        reason: `Object type "${rule.targetObject}" is not allowed on your ${tierInfo.name} plan. Please upgrade to use this object type.`,
+        tierInfo
+      };
+    }
+  }
+
+  return { allowed: true, tierInfo, currentMappings: totalMappings };
+}
+
+module.exports = { 
+  getPortalTier, 
+  setPortalTier, 
+  getAllPortals, 
+  checkLimits, 
+  countTotalMappings,
+  isObjectAllowed,
+  TIERS 
+};
