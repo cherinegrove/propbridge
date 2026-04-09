@@ -1,7 +1,7 @@
 {
   "name": "hubspot-property-sync-app",
   "version": "1.0.0",
-  "description": "PropBridge - Sync property values between HubSpot CRM objects",
+  "description": "SyncStation - Sync property values between HubSpot CRM objects",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
