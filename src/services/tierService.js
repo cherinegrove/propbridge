@@ -76,6 +76,14 @@ const TIERS = {
     maxRules: 0,
     allowedObjects: [],
     trialDays: null
+  },
+  CANCELLED: {
+    name: 'CANCELLED',
+    price: 0,
+    maxMappings: 0,
+    maxRules: 0,
+    allowedObjects: [],
+    trialDays: null
   }
 };
 
