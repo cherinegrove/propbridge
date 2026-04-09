@@ -1,7 +1,7 @@
-// src/services/pollingService.js - OPTIMIZED VERSION WITH TIER ENFORCEMENT
+// src/services/pollingService.js - WITH TIER ENFORCEMENT & ERROR LOGGING
 const { getClient } = require('./hubspotClient');
 const { sync } = require('./syncService');
-const { getPortalTier, isObjectAllowed } = require('./tierService');  // ✅ ADDED
+const { getPortalTier, isObjectAllowed } = require('./tierService');
 const { Pool } = require('pg');
 
 let pool = null;
@@ -14,6 +14,21 @@ function getPool() {
     });
   }
   return pool;
+}
+
+// ✅ NEW: Log sync results to database
+async function logSyncResult(portalId, objectType, ruleName, status, errorMessage = null, recordsSynced = 0) {
+  const p = getPool();
+  if (!p) return;
+  
+  try {
+    await p.query(`
+      INSERT INTO sync_logs (portal_id, sync_time, status, error_message, records_synced, object_type, rule_name)
+      VALUES ($1, NOW(), $2, $3, $4, $5, $6)
+    `, [portalId, status, errorMessage, recordsSynced, objectType, ruleName]);
+  } catch (err) {
+    console.error('[Polling] Error logging sync result:', err.message);
+  }
 }
 
 // Track last sync time per portal
@@ -223,12 +238,20 @@ async function pollObjectType(portalId, objectType) {
     
     if (!tierInfo.canSync) {
       console.log(`[Polling] ⛔ Portal ${portalId} cannot sync - tier: ${tierInfo.tier}, expired: ${tierInfo.isExpired}`);
+      
+      // ✅ LOG BLOCKED SYNC
+      await logSyncResult(portalId, objectType, 'ALL_RULES', 'blocked', `Tier ${tierInfo.tier} - cannot sync`, 0);
+      
       return { synced: 0, errors: 0 };
     }
     
     // ✅ TIER ENFORCEMENT: Check if object type is allowed for this tier
     if (!isObjectAllowed(tierInfo.tier, objectType)) {
       console.log(`[Polling] ⛔ Portal ${portalId} tier ${tierInfo.tier} doesn't allow ${objectType} - skipping`);
+      
+      // ✅ LOG BLOCKED OBJECT TYPE
+      await logSyncResult(portalId, objectType, 'ALL_RULES', 'blocked', `Object type ${objectType} not allowed on ${tierInfo.tier}`, 0);
+      
       return { synced: 0, errors: 0 };
     }
     
@@ -299,10 +322,18 @@ async function pollObjectType(portalId, objectType) {
             if (result.status === 'success') {
               syncedCount += result.updated;
               console.log(`[Polling] Rule "${rule.name}" synced ${result.updated} record(s)`);
+              
+              // ✅ LOG SUCCESS
+              await logSyncResult(portalId, objectType, rule.name, 'success', null, result.updated);
             }
             
             if (result.errors && result.errors.length > 0) {
               errorCount += result.errors.length;
+              
+              // ✅ LOG ERRORS
+              for (const error of result.errors) {
+                await logSyncResult(portalId, objectType, rule.name, 'error', error.message, 0);
+              }
             }
             
             // 🆕 Add delay between syncs to prevent rate limiting
@@ -311,6 +342,9 @@ async function pollObjectType(portalId, objectType) {
           } catch (err) {
             console.error(`[Polling] Rule "${rule.name}" failed:`, err.message);
             errorCount++;
+            
+            // ✅ LOG ERROR
+            await logSyncResult(portalId, objectType, rule.name, 'error', err.message, 0);
           }
         }
       }
@@ -330,6 +364,10 @@ async function pollObjectType(portalId, objectType) {
     
   } catch (err) {
     console.error(`[Polling] Error polling ${objectType} for portal ${portalId}:`, err.message);
+    
+    // ✅ LOG POLLING ERROR
+    await logSyncResult(portalId, objectType, 'POLLING', 'error', err.message, 0);
+    
     return { synced: 0, errors: 1 };
   }
 }
