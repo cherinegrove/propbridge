@@ -83,6 +83,12 @@ router.get('/', (req, res) => {
 router.get('/rules', async (req, res) => {
   const { portalId } = req.query;
   if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
+  
+  // Prevent browser caching of portal-specific data
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
   const rules = await getRules(portalId);
   res.json({ rules });
 });
@@ -204,6 +210,11 @@ router.post('/rules', async (req, res) => {
 router.get('/objects', async (req, res) => {
   const { portalId, refresh } = req.query;
   if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
+
+  // Prevent browser caching of portal-specific data
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
 
   // Check cache first
   const cacheKey   = `objects-${portalId}`;
