@@ -1,4 +1,4 @@
-// src/services/tierService.js
+// src/services/tierService.js - COMPLETE VERSION WITH PAYSTACK COLUMNS
 const { Pool } = require('pg');
 
 let pool = null;
@@ -9,85 +9,147 @@ function getPool() {
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false }
     });
+    
+    // Create table on first connection
     pool.query(`
       CREATE TABLE IF NOT EXISTS portal_tiers (
         portal_id TEXT PRIMARY KEY,
-        tier TEXT NOT NULL DEFAULT 'trial',
-        trial_started_at TIMESTAMP DEFAULT NOW(),
+        tier TEXT NOT NULL DEFAULT 'TRIAL',
+        created_at TIMESTAMP DEFAULT NOW(),
+        paystack_customer_id TEXT,
+        paystack_subscription_id TEXT,
+        paystack_subscription_status TEXT,
         updated_at TIMESTAMP DEFAULT NOW()
-      );
+      )
     `).then(() => console.log('[Tiers] Table ready'))
       .catch(err => console.error('[Tiers] Table error:', err.message));
   }
   return pool;
 }
 
+// Tier definitions with limits
 const TIERS = {
-  trial:     { name: 'Free Trial',  maxRules: 10,  maxMappings: 10,  price: 0,  trialDays: 14 },
-  starter:   { name: 'Starter',     maxRules: 10,  maxMappings: 10,  price: 7   },
-  growth:    { name: 'Growth',      maxRules: 30,  maxMappings: 30,  price: 12  },
-  pro:       { name: 'Pro',         maxRules: 50,  maxMappings: 50,  price: 16  },
-  business:  { name: 'Business',    maxRules: 100, maxMappings: 100, price: 25  },
-  suspended: { name: 'Suspended',   maxRules: 0,   maxMappings: 0,   price: 0   },
-  cancelled: { name: 'Cancelled',   maxRules: 0,   maxMappings: 0,   price: 0   }
+  FREE: {
+    name: 'FREE',
+    price: 0,
+    maxMappings: 5,
+    maxRules: Infinity,
+    allowedObjects: ['contacts', 'companies', 'deals'],
+    trialDays: null
+  },
+  TRIAL: {
+    name: 'TRIAL',
+    price: 0,
+    maxMappings: 30,
+    maxRules: Infinity,
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects'],
+    trialDays: 7
+  },
+  STARTER: {
+    name: 'STARTER',
+    price: 5,
+    maxMappings: 10,
+    maxRules: Infinity,
+    allowedObjects: ['contacts', 'companies', 'deals'],
+    trialDays: null
+  },
+  PRO: {
+    name: 'PRO',
+    price: 30,
+    maxMappings: 30,
+    maxRules: Infinity,
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects'],
+    trialDays: null
+  },
+  BUSINESS: {
+    name: 'BUSINESS',
+    price: 50,
+    maxMappings: 100,
+    maxRules: Infinity,
+    allowedObjects: ['contacts', 'companies', 'deals', 'tickets', 'leads', 'projects'],
+    trialDays: null
+  },
+  SUSPENDED: {
+    name: 'SUSPENDED',
+    price: 0,
+    maxMappings: 0,
+    maxRules: 0,
+    allowedObjects: [],
+    trialDays: null
+  }
 };
 
 async function getPortalTier(portalId) {
   const p = getPool();
-  if (!p) return { tier: 'trial', ...TIERS.trial, isExpired: false };
-
   try {
     const result = await p.query(
-      'SELECT tier, trial_started_at FROM portal_tiers WHERE portal_id = $1',
-      [String(portalId)]
+      'SELECT tier, created_at, paystack_customer_id, paystack_subscription_id, paystack_subscription_status FROM portal_tiers WHERE portal_id = $1',
+      [portalId]
     );
-
-    if (!result.rows[0]) {
+    
+    if (result.rows.length === 0) {
       await p.query(
-        'INSERT INTO portal_tiers (portal_id, tier) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [String(portalId), 'trial']
+        'INSERT INTO portal_tiers (portal_id, tier, created_at) VALUES ($1, $2, NOW()) ON CONFLICT (portal_id) DO NOTHING',
+        [portalId, 'TRIAL']
       );
-      return { tier: 'trial', ...TIERS.trial, isExpired: false, trialDaysLeft: 14 };
+      return { tier: 'TRIAL', created_at: new Date(), expired: false };
     }
-
-    const { tier, trial_started_at } = result.rows[0];
-    const tierInfo = TIERS[tier] || TIERS.trial;
-
-    let isExpired = false;
-    let trialDaysLeft = 0;
-
-    if (tier === 'trial') {
-      const daysSinceStart = (Date.now() - new Date(trial_started_at).getTime()) / (1000 * 60 * 60 * 24);
-      isExpired = daysSinceStart > 14;
-      trialDaysLeft = Math.max(0, 14 - daysSinceStart);
+    
+    const row = result.rows[0];
+    const tierConfig = TIERS[row.tier] || TIERS.TRIAL;
+    
+    let expired = false;
+    if (tierConfig.trialDays) {
+      const createdDate = new Date(row.created_at);
+      const expiryDate = new Date(createdDate.getTime() + (tierConfig.trialDays * 86400000));
+      expired = Date.now() > expiryDate.getTime();
     }
-
-    return { tier, ...tierInfo, isExpired, trialDaysLeft };
+    
+    return {
+      tier: row.tier,
+      created_at: row.created_at,
+      paystack_customer_id: row.paystack_customer_id,
+      paystack_subscription_id: row.paystack_subscription_id,
+      paystack_subscription_status: row.paystack_subscription_status,
+      expired
+    };
   } catch (err) {
     console.error('[Tiers] Get tier error:', err.message);
-    return { tier: 'trial', ...TIERS.trial, isExpired: false, trialDaysLeft: 14 };
+    return { tier: 'TRIAL', created_at: new Date(), expired: false };
   }
 }
 
-async function setPortalTier(portalId, tier) {
+async function setPortalTier(portalId, tier, paystackData = {}) {
   const p = getPool();
-  if (!p) return;
+  const validTier = TIERS[tier.toUpperCase()] ? tier.toUpperCase() : 'TRIAL';
+  
+  const { customer_id, subscription_id, subscription_status } = paystackData;
+  
   await p.query(`
-    INSERT INTO portal_tiers (portal_id, tier, updated_at)
-    VALUES ($1, $2, NOW())
-    ON CONFLICT (portal_id) DO UPDATE SET tier = $2, updated_at = NOW()
-  `, [String(portalId), tier]);
+    INSERT INTO portal_tiers (portal_id, tier, created_at, paystack_customer_id, paystack_subscription_id, paystack_subscription_status, updated_at)
+    VALUES ($1, $2, NOW(), $3, $4, $5, NOW())
+    ON CONFLICT (portal_id) DO UPDATE SET
+      tier = $2,
+      paystack_customer_id = COALESCE($3, portal_tiers.paystack_customer_id),
+      paystack_subscription_id = COALESCE($4, portal_tiers.paystack_subscription_id),
+      paystack_subscription_status = COALESCE($5, portal_tiers.paystack_subscription_status),
+      updated_at = NOW()
+  `, [portalId, validTier, customer_id, subscription_id, subscription_status]);
+  
+  return { tier: validTier };
 }
 
 async function getAllPortals() {
   const p = getPool();
-  if (!p) return [];
   try {
     const result = await p.query(`
       SELECT 
         pt.portal_id,
         pt.tier,
-        pt.trial_started_at,
+        pt.created_at,
+        pt.paystack_customer_id,
+        pt.paystack_subscription_id,
+        pt.paystack_subscription_status,
         pt.updated_at,
         t.data->>'hub_id' as hub_id
       FROM portal_tiers pt
@@ -101,38 +163,9 @@ async function getAllPortals() {
   }
 }
 
-async function checkLimits(portalId, rules) {
-  const tierInfo = await getPortalTier(portalId);
-
-  if (tierInfo.isExpired) {
-    return { allowed: false, reason: 'Trial expired. Please upgrade to continue.' };
-  }
-
-  if (tierInfo.tier === 'suspended') {
-    return { allowed: false, reason: 'Your account is suspended. Please contact support.' };
-  }
-
-  if (tierInfo.tier === 'cancelled') {
-    return { allowed: false, reason: 'Your account has been cancelled. Please contact support to reactivate.' };
-  }
-
-  if (rules.length > tierInfo.maxRules) {
-    return {
-      allowed: false,
-      reason: `Your ${tierInfo.name} plan allows ${tierInfo.maxRules} sync rules. You have ${rules.length}. Please upgrade.`
-    };
-  }
-
-  for (const rule of rules) {
-    if (rule.mappings && rule.mappings.length > tierInfo.maxMappings) {
-      return {
-        allowed: false,
-        reason: `Your ${tierInfo.name} plan allows ${tierInfo.maxMappings} property mappings per rule. Rule "${rule.name}" has ${rule.mappings.length}. Please upgrade.`
-      };
-    }
-  }
-
-  return { allowed: true, tierInfo };
-}
-
-module.exports = { getPortalTier, setPortalTier, getAllPortals, checkLimits, TIERS };
+module.exports = {
+  TIERS,
+  getPortalTier,
+  setPortalTier,
+  getAllPortals
+};
