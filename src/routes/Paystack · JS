@@ -1,0 +1,242 @@
+// src/routes/paystack.js - PayStack webhook handler for subscription management
+
+const express = require('express');
+const router = express.Router();
+const crypto = require('crypto');
+const { Pool } = require('pg');
+const { setPortalTier } = require('../services/tierService');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+
+// PayStack webhook endpoint
+router.post('/webhook', express.json(), async (req, res) => {
+  const hash = crypto.createHmac('sha512', PAYSTACK_SECRET_KEY)
+    .update(JSON.stringify(req.body))
+    .digest('hex');
+  
+  if (hash !== req.headers['x-paystack-signature']) {
+    console.error('[PayStack] Invalid webhook signature');
+    return res.status(400).send('Invalid signature');
+  }
+  
+  const event = req.body;
+  console.log(`[PayStack] Event received: ${event.event}`);
+  
+  try {
+    switch (event.event) {
+      case 'subscription.create':
+        await handleSubscriptionCreated(event.data);
+        break;
+        
+      case 'subscription.disable':
+        await handleSubscriptionDisabled(event.data);
+        break;
+        
+      case 'subscription.not_renew':
+        await handleSubscriptionNotRenew(event.data);
+        break;
+        
+      case 'charge.success':
+        await handleChargeSuccess(event.data);
+        break;
+        
+      case 'charge.failed':
+        await handleChargeFailed(event.data);
+        break;
+        
+      default:
+        console.log(`[PayStack] Unhandled event type: ${event.event}`);
+    }
+  } catch (err) {
+    console.error(`[PayStack] Error handling ${event.event}:`, err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+  
+  res.json({ received: true });
+});
+
+// Handle subscription creation
+async function handleSubscriptionCreated(data) {
+  const customerId = data.customer.customer_code;
+  const subscriptionCode = data.subscription_code;
+  const planCode = data.plan.plan_code;
+  
+  // Map PayStack plan codes to tiers
+  const planToTier = {
+    [process.env.PAYSTACK_PLAN_STARTER]: 'STARTER',
+    [process.env.PAYSTACK_PLAN_PRO]: 'PRO',
+    [process.env.PAYSTACK_PLAN_BUSINESS]: 'BUSINESS'
+  };
+  
+  const tier = planToTier[planCode];
+  
+  if (!tier) {
+    console.error(`[PayStack] Unknown plan code: ${planCode}`);
+    return;
+  }
+  
+  // Get portal_id from metadata (should be passed during checkout)
+  const portalId = data.metadata?.portal_id;
+  
+  if (!portalId) {
+    console.error('[PayStack] No portal_id in subscription metadata');
+    return;
+  }
+  
+  // Update portal tier
+  await setPortalTier(portalId, tier, {
+    customerId,
+    subscriptionId: subscriptionCode,
+    subscriptionStatus: 'active'
+  });
+  
+  console.log(`[PayStack] ✅ Subscription created: Portal ${portalId} -> ${tier}`);
+}
+
+// Handle subscription disabled (cancelled)
+async function handleSubscriptionDisabled(data) {
+  const customerId = data.customer.customer_code;
+  
+  // Find portal by customer ID
+  const result = await pool.query(
+    'SELECT portal_id FROM portal_tiers WHERE stripe_customer_id = $1',
+    [customerId]
+  );
+  
+  if (result.rows.length === 0) {
+    console.error(`[PayStack] No portal found for customer ${customerId}`);
+    return;
+  }
+  
+  const portalId = result.rows[0].portal_id;
+  
+  // Downgrade to FREE
+  await setPortalTier(portalId, 'FREE', {
+    subscriptionId: null,
+    subscriptionStatus: 'canceled'
+  });
+  
+  console.log(`[PayStack] ⛔ Subscription disabled: Portal ${portalId} -> FREE`);
+}
+
+// Handle subscription not renewing
+async function handleSubscriptionNotRenew(data) {
+  const customerId = data.customer.customer_code;
+  
+  // Update subscription status to 'not_renewing'
+  await pool.query(
+    `UPDATE portal_tiers 
+     SET stripe_subscription_status = 'not_renewing',
+         updated_at = NOW()
+     WHERE stripe_customer_id = $1`,
+    [customerId]
+  );
+  
+  console.log(`[PayStack] ⚠️ Subscription not renewing: ${customerId}`);
+}
+
+// Handle successful charge
+async function handleChargeSuccess(data) {
+  const customerId = data.customer.customer_code;
+  
+  // Mark subscription as active (if it was past_due)
+  await pool.query(
+    `UPDATE portal_tiers 
+     SET stripe_subscription_status = 'active',
+         updated_at = NOW()
+     WHERE stripe_customer_id = $1 
+     AND stripe_subscription_status = 'past_due'`,
+    [customerId]
+  );
+  
+  console.log(`[PayStack] ✅ Charge succeeded: ${customerId}`);
+}
+
+// Handle failed charge
+async function handleChargeFailed(data) {
+  const customerId = data.customer.customer_code;
+  
+  // Mark subscription as past_due
+  await pool.query(
+    `UPDATE portal_tiers 
+     SET stripe_subscription_status = 'past_due',
+         updated_at = NOW()
+     WHERE stripe_customer_id = $1`,
+    [customerId]
+  );
+  
+  console.log(`[PayStack] ⚠️ Charge failed: ${customerId} - marked as past_due`);
+}
+
+// API endpoint to get subscription page URL
+router.post('/get-subscription-url', express.json(), async (req, res) => {
+  const { portalId, planCode } = req.body;
+  
+  if (!portalId || !planCode) {
+    return res.status(400).json({ error: 'Missing portalId or planCode' });
+  }
+  
+  try {
+    // Get portal email from database (or use a default)
+    const result = await pool.query(
+      `SELECT t.data->>'user_email' as email 
+       FROM tokens t 
+       WHERE t.portal_id = $1 
+       LIMIT 1`,
+      [portalId]
+    );
+    
+    const email = result.rows[0]?.email || 'customer@example.com';
+    
+    // PayStack subscription page URL format
+    // The plan subscription page was created when you ticked the checkbox
+    const subscriptionUrl = `https://paystack.com/pay/${planCode}?email=${encodeURIComponent(email)}&metadata=${encodeURIComponent(JSON.stringify({ portal_id: portalId }))}`;
+    
+    res.json({ url: subscriptionUrl });
+    
+  } catch (err) {
+    console.error('[PayStack] Error creating subscription URL:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API endpoint to manage subscription (cancel, etc.)
+router.post('/manage-subscription', express.json(), async (req, res) => {
+  const { portalId } = req.body;
+  
+  if (!portalId) {
+    return res.status(400).json({ error: 'Missing portalId' });
+  }
+  
+  try {
+    const result = await pool.query(
+      'SELECT stripe_customer_id, stripe_subscription_id FROM portal_tiers WHERE portal_id = $1',
+      [portalId]
+    );
+    
+    const customerId = result.rows[0]?.stripe_customer_id;
+    const subscriptionCode = result.rows[0]?.stripe_subscription_id;
+    
+    if (!customerId || !subscriptionCode) {
+      return res.status(404).json({ error: 'No active subscription found' });
+    }
+    
+    // PayStack doesn't have a customer portal like Stripe
+    // Users manage subscriptions via email links or your custom UI
+    res.json({ 
+      message: 'To manage your subscription, please contact support or use the cancellation link sent to your email.',
+      subscriptionCode 
+    });
+    
+  } catch (err) {
+    console.error('[PayStack] Error getting subscription info:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
