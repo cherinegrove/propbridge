@@ -79,6 +79,30 @@ router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/settings.html'));
 });
 
+// GET /settings/errors - Return sync errors for a portal
+router.get('/errors', async (req, res) => {
+  const { portalId } = req.query;
+  if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
+  
+  // Prevent browser caching
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
+  // TODO: Implement actual error fetching from sync_logs table
+  // For now, return empty errors to prevent frontend crashes
+  res.json({ errors: [] });
+});
+
+// DELETE /settings/errors - Clear all errors for a portal
+router.delete('/errors', async (req, res) => {
+  const { portalId } = req.query;
+  if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
+  
+  // TODO: Implement actual error clearing
+  res.json({ ok: true });
+});
+
 // GET /settings/rules
 router.get('/rules', async (req, res) => {
   const { portalId } = req.query;
