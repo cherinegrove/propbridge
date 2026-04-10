@@ -1,8 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
-const db = require('../db');
-const { setPortalTier } = require('../services/tierService');
+const { Pool } = require('pg');
+
+let pool = null;
+
+function getPool() {
+  if (!pool && process.env.DATABASE_URL) {
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+  }
+  return pool;
+}
 
 // PayStack webhook endpoint
 router.post('/webhook', async (req, res) => {
@@ -20,6 +31,8 @@ router.post('/webhook', async (req, res) => {
 
     const { event, data } = req.body;
     console.log(`PayStack webhook received: ${event}`);
+
+    const db = getPool();
 
     // Handle subscription created
     if (event === 'subscription.create') {
@@ -170,24 +183,25 @@ router.post('/create-subscription', async (req, res) => {
       })
     });
 
-    const data = await response.json();
+    const responseData = await response.json();
 
-    if (data.status) {
+    if (responseData.status) {
+      const db = getPool();
       // Store customer reference
       await db.query(
         `UPDATE portal_tiers 
          SET paystack_customer_id = $1
          WHERE portal_id = $2`,
-        [data.data.reference, portalId]
+        [responseData.data.reference, portalId]
       );
 
       res.json({
         success: true,
-        checkout_url: data.data.authorization_url,
-        reference: data.data.reference
+        checkout_url: responseData.data.authorization_url,
+        reference: responseData.data.reference
       });
     } else {
-      res.status(500).json({ error: data.message });
+      res.status(500).json({ error: responseData.message });
     }
 
   } catch (error) {
