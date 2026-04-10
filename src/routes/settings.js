@@ -5,6 +5,7 @@ const path          = require('path');
 const { getClient } = require('../services/hubspotClient');
 const { Pool }      = require('pg');
 const { validateMapping, getCompatibleTypes } = require('../utils/fieldTypeCompatibility');
+const { getPortalTier } = require('../services/tierService');
 
 let pool = null;
 
@@ -76,7 +77,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 // GET /settings
 router.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'settings.html'));
+  res.sendFile(path.join(__dirname, '../public/settings.html'));
 });
 
 // GET /settings/errors - Return sync errors for a portal
@@ -117,10 +118,67 @@ router.get('/rules', async (req, res) => {
   res.json({ rules });
 });
 
+// GET /settings/tier - Get portal tier info
+router.get('/tier', async (req, res) => {
+  const { portalId } = req.query;
+  if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
+  
+  try {
+    const tierInfo = await getPortalTier(portalId);
+    res.json(tierInfo);
+  } catch (err) {
+    console.error('[Settings] Error getting tier:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /settings/rules - WITH FIELD TYPE VALIDATION
 router.post('/rules', async (req, res) => {
   const { portalId, rules } = req.body;
   if (!portalId) return res.status(400).json({ error: 'Missing portalId' });
+  
+  // CHECK TIER MAPPING LIMIT FIRST
+  try {
+    const tierInfo = await getPortalTier(portalId);
+    const tier = tierInfo.tier || 'trial';
+    
+    // Define tier limits (must match frontend)
+    const tierLimits = {
+      free: 999999,
+      trial: 30,
+      starter: 10,
+      pro: 30,
+      business: 100
+    };
+    
+    const limit = tierLimits[tier] || 30;
+    
+    // Count total mappings across ALL rules
+    const totalMappings = (rules || []).reduce((sum, rule) => {
+      return sum + (rule.mappings?.length || 0);
+    }, 0);
+    
+    // Block if over limit
+    if (totalMappings > limit) {
+      const tierNames = {
+        trial: 'Trial',
+        starter: 'Starter',
+        pro: 'Pro',
+        business: 'Business'
+      };
+      
+      return res.status(400).json({ 
+        error: `Mapping limit exceeded`,
+        message: `You have ${totalMappings} property mappings but your ${tierNames[tier]} plan allows ${limit}.\n\nPlease remove ${totalMappings - limit} mapping(s) or upgrade your plan.`,
+        limit: limit,
+        current: totalMappings,
+        tier: tier
+      });
+    }
+  } catch (err) {
+    console.error('[Settings] Error checking tier limit:', err.message);
+    // Continue even if tier check fails (don't block legitimate saves)
+  }
   
   // Validate each rule's mappings for field type compatibility
   try {
