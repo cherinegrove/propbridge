@@ -860,7 +860,7 @@
             <h4>Starter</h4>
             <div class="plan-price">
               <span class="currency">$</span>
-              <span class="amount">85</span>
+              <span class="amount">7</span>
               <span class="period">/month</span>
             </div>
           </div>
@@ -882,7 +882,7 @@
             <h4>Pro</h4>
             <div class="plan-price">
               <span class="currency">$</span>
-              <span class="amount">510</span>
+              <span class="amount">15</span>
               <span class="period">/month</span>
             </div>
           </div>
@@ -903,7 +903,7 @@
             <h4>Business</h4>
             <div class="plan-price">
               <span class="currency">$</span>
-              <span class="amount">850</span>
+              <span class="amount">25</span>
               <span class="period">/month</span>
             </div>
           </div>
@@ -1546,8 +1546,28 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ portalId, rules })
     })
-    .then(r => r.json())
-    .then(data => {
+    .then(async r => {
+      const data = await r.json();
+      
+      // Check if response is error (status 400+)
+      if (!r.ok) {
+        // Backend returned an error
+        if (data.message) {
+          // Tier limit error with detailed message
+          alert(data.message);
+          showToast('❌ ' + data.error, 'error');
+        } else if (data.error) {
+          showToast('❌ ' + data.error, 'error');
+        } else {
+          showToast('❌ Failed to save rule', 'error');
+        }
+        
+        // Revert the rule addition/update
+        location.reload();
+        return;
+      }
+      
+      // Success case
       if (data.validationErrors) {
         // Server found validation errors
         showToast('❌ ' + data.validationErrors[0].error, 'error');
@@ -1559,7 +1579,7 @@
       }
     })
     .catch(() => {
-      showToast(editingId ? '✓ Rule updated' : '✓ Rule saved', 'success');
+      showToast('❌ Network error - please try again', 'error');
     });
   }
 
@@ -1612,6 +1632,7 @@
         })
         .catch(() => {});
     }
+  }, 30000); // 30 seconds
 
   // ========== PAYSTACK UPGRADE FUNCTIONS ==========
   
@@ -1674,9 +1695,9 @@
         
         showToast(`✨ Your plan has been updated to ${tierNames[tier]}!`, 'success');
         
-        // Reload rules to update limits
+        // Reload page to refresh limits
         setTimeout(() => {
-          loadRules();
+          window.location.reload();
         }, 1000);
       }
       
@@ -1702,6 +1723,10 @@
 
     } catch (err) {
       console.error('[Upgrade] Failed to check tier:', err);
+      // Set defaults if tier check fails
+      document.getElementById('currentTierName').textContent = 'TRIAL';
+      document.getElementById('currentMappingLimit').textContent = '30';
+      document.getElementById('upgradeSection').style.display = 'block';
     }
   }
 
@@ -1716,9 +1741,9 @@
     }, 30000); // 30 seconds
   }
 
-  // Call on page load
-  loadRules();
+  // Call tier monitoring on page load
   startTierMonitoring();
+
 </script>
 </body>
 </html>
