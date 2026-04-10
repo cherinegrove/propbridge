@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropBridge — Sync Rules</title>
+<title>SyncStation — Sync Rules</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <!-- FIELD TYPE VALIDATION -->
 <link rel="stylesheet" href="/css/fieldTypeValidation.css">
@@ -666,7 +666,7 @@
 <div class="header">
   <div class="logo">
     <div class="logo-icon">⇄</div>
-    PropBridge
+    SyncStation
   </div>
   <nav class="header-nav">
     <a id="navSettings" href="#" class="active">Sync Rules</a>
@@ -801,7 +801,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  let rules = JSON.parse(localStorage.getItem('propbridge_rules') || '[]');
+  let rules = JSON.parse(localStorage.getItem('SyncStation_rules') || '[]');
   let editingId = null;
   let sourceProps = [];
   let targetProps = [];
@@ -1276,7 +1276,7 @@
   }
 
   function saveRules() {
-    localStorage.setItem('propbridge_rules', JSON.stringify(rules));
+    localStorage.setItem('SyncStation_rules', JSON.stringify(rules));
   }
 
   function showToast(msg, type) {
