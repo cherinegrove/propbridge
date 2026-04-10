@@ -76,7 +76,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 
 // GET /settings
 router.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/settings.html'));
+  res.sendFile(path.join(__dirname, 'settings.html'));
 });
 
 // GET /settings/errors - Return sync errors for a portal
