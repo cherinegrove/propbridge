@@ -43,7 +43,6 @@
   .tier-free      { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
   .tier-trial     { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
   .tier-starter   { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
-  .tier-growth    { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
   .tier-pro       { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
   .tier-business  { background: rgba(255,107,53,0.1); color: var(--accent); border: 1px solid rgba(255,107,53,0.3); }
   .tier-cancelled { background: rgba(139,139,139,0.1); color: #888; border: 1px solid rgba(139,139,139,0.3); }
@@ -267,7 +266,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const TIER_PRICES = { trial: 0, starter: 7, growth: 12, pro: 16, business: 25, cancelled: 0, suspended: 0 };
+  const TIER_PRICES = { trial: 0, starter: 85, pro: 510, business: 850, cancelled: 0, suspended: 0, free: 0 };
   const adminKey    = new URLSearchParams(window.location.search).get('key') || '';
 
   function showPanel(name, el) {
@@ -360,10 +359,9 @@
           <select id="tier-${p.portal_id}" style="width:155px">
             <option value="free"      ${p.tier==='free'?'selected':''}>Free</option>
             <option value="trial"     ${p.tier==='trial'?'selected':''}>Trial</option>
-            <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($7)</option>
-            <option value="growth"    ${p.tier==='growth'?'selected':''}>Growth ($12)</option>
-            <option value="pro"       ${p.tier==='pro'?'selected':''}>Pro ($16)</option>
-            <option value="business"  ${p.tier==='business'?'selected':''}>Business ($25)</option>
+            <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($85)</option>
+            <option value="pro"       ${p.tier==='pro'?'selected':''}>Pro ($510)</option>
+            <option value="business"  ${p.tier==='business'?'selected':''}>Business ($850)</option>
             <option value="suspended" ${p.tier==='suspended'?'selected':''}>🚫 Suspended</option>
             <option value="cancelled" ${p.tier==='cancelled'?'selected':''}>❌ Cancelled</option>
           </select>
