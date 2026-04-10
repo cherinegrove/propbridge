@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PropBridge Admin</title>
+<title>SyncStation Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -110,7 +110,7 @@
 <body>
 
 <div class="header">
-  <div class="logo"><div class="logo-icon">⇄</div> PropBridge <span class="admin-badge">ADMIN</span></div>
+  <div class="logo"><div class="logo-icon">⇄</div> SyncStation <span class="admin-badge">ADMIN</span></div>
   <span class="mono" id="lastUpdated"></span>
 </div>
 
@@ -151,7 +151,7 @@
   <div class="panel" id="panel-messages">
     <div class="form-card">
       <h3>📣 Send In-App Notification</h3>
-      <div class="subtitle">Sends a banner notification inside PropBridge for the selected portals.</div>
+      <div class="subtitle">Sends a banner notification inside SyncStation for the selected portals.</div>
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Send To</label>
@@ -422,8 +422,8 @@
     const msgs = {
       trial_expiring: { title: 'Your free trial is ending soon', message: 'Upgrade now to keep your sync rules active.', type: 'warning', actionLabel: 'View Plans', actionUrl: '/account' },
       usage_90: { title: "You've used 90% of your sync rules", message: 'Upgrade to add more rules.', type: 'warning', actionLabel: 'Upgrade', actionUrl: '/account' },
-      new_feature: { title: '🎉 New Feature Available', message: 'We\'ve added new functionality to PropBridge!', type: 'info' },
-      maintenance: { title: '🔧 Scheduled Maintenance', message: 'PropBridge will be briefly unavailable for maintenance.', type: 'warning' }
+      new_feature: { title: '🎉 New Feature Available', message: 'We\'ve added new functionality to SyncStation!', type: 'info' },
+      maintenance: { title: '🔧 Scheduled Maintenance', message: 'SyncStation will be briefly unavailable for maintenance.', type: 'warning' }
     };
     const m = msgs[type];
     document.getElementById('msgTitle').value = m.title;
