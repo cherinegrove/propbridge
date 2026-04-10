@@ -1,7 +1,7 @@
 // src/services/emailService.js
 const axios = require('axios');
 
-const FROM     = process.env.RESEND_FROM_EMAIL || 'syncstation <onboarding@resend.dev>';
+const FROM     = process.env.RESEND_FROM_EMAIL || 'SyncStation <onboarding@resend.dev>';
 const BASE_URL = process.env.APP_BASE_URL || ('https://' + process.env.RAILWAY_PUBLIC_DOMAIN);
 
 async function sendEmail(to, subject, html) {
