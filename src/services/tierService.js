@@ -98,13 +98,15 @@ async function getPortalTier(portalId) {
     if (result.rows.length === 0) {
       await p.query(
         'INSERT INTO portal_tiers (portal_id, tier, created_at) VALUES ($1, $2, NOW()) ON CONFLICT (portal_id) DO NOTHING',
-        [portalId, 'TRIAL']
+        [portalId, 'trial']
       );
-      return { tier: 'TRIAL', created_at: new Date(), expired: false };
+      return { tier: 'trial', created_at: new Date(), expired: false };
     }
     
     const row = result.rows[0];
-    const tierConfig = TIERS[row.tier] || TIERS.TRIAL;
+    // Normalize tier to lowercase for frontend
+    const tier = row.tier.toLowerCase();
+    const tierConfig = TIERS[tier.toUpperCase()] || TIERS.TRIAL;
     
     let expired = false;
     if (tierConfig.trialDays) {
@@ -114,7 +116,7 @@ async function getPortalTier(portalId) {
     }
     
     return {
-      tier: row.tier,
+      tier: tier,  // Use normalized lowercase tier
       created_at: row.created_at,
       paystack_customer_id: row.paystack_customer_id,
       paystack_subscription_id: row.paystack_subscription_id,
@@ -123,13 +125,20 @@ async function getPortalTier(portalId) {
     };
   } catch (err) {
     console.error('[Tiers] Get tier error:', err.message);
-    return { tier: 'TRIAL', created_at: new Date(), expired: false };
+    return { tier: 'trial', created_at: new Date(), expired: false };
   }
 }
 
 async function setPortalTier(portalId, tier, paystackData = {}) {
   const p = getPool();
-  const validTier = TIERS[tier.toUpperCase()] ? tier.toUpperCase() : 'TRIAL';
+  // Validate tier exists (check uppercase version)
+  const tierUpper = tier.toUpperCase();
+  if (!TIERS[tierUpper]) {
+    throw new Error(`Invalid tier: ${tier}`);
+  }
+  
+  // Store lowercase in database (frontend expects lowercase)
+  const validTier = tier.toLowerCase();
   
   const { customer_id, subscription_id, subscription_status } = paystackData;
   
