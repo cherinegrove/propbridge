@@ -659,6 +659,146 @@
     padding: 40px 20px;
     color: var(--muted);
   }
+
+  /* PayStack Upgrade UI Styles */
+  .upgrade-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .upgrade-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .plan-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+
+  .plan-card {
+    position: relative;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .plan-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .plan-featured {
+    border: 2px solid var(--accent);
+  }
+
+  .plan-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 4px 12px;
+    border-radius: 12px;
+  }
+
+  .plan-header {
+    margin-bottom: 20px;
+  }
+
+  .plan-card h4 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text);
+  }
+
+  .plan-price {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+
+  .plan-price .currency {
+    font-size: 18px;
+    color: var(--muted);
+  }
+
+  .plan-price .amount {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .plan-price .period {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px 0;
+    flex: 1;
+  }
+
+  .plan-features li {
+    padding: 8px 0;
+    color: var(--text);
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .plan-features li:last-child {
+    border-bottom: none;
+  }
+
+  .plan-features li:before {
+    content: '✓';
+    color: var(--success);
+    font-weight: bold;
+    margin-right: 8px;
+  }
+
+  .btn-upgrade {
+    width: 100%;
+    padding: 12px 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: auto;
+  }
+
+  .btn-upgrade:hover {
+    background: var(--accent2);
+    transform: scale(1.02);
+  }
+
+  .plan-featured .btn-upgrade {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+  }
 </style>
 </head>
 <body>
@@ -697,6 +837,90 @@
     <div class="stat-card clickable" onclick="toggleErrorLog()">
       <div class="stat-value errors" id="statErrors">0</div>
       <div class="stat-label">Sync errors</div>
+    </div>
+  </div>
+
+  <!-- PayStack Upgrade Section -->
+  <div id="upgradeSection" style="display: none;">
+    <div class="upgrade-container">
+      <div class="upgrade-header">
+        <div>
+          <h3 style="margin: 0 0 4px 0; font-size: 18px;">Upgrade Your Plan</h3>
+          <p style="margin: 0; color: var(--muted); font-size: 14px;">
+            Current: <span id="currentTierName" style="color: var(--accent); font-weight: 500;">FREE</span> 
+            · <span id="currentRuleLimit">30</span> mapping rules
+          </p>
+        </div>
+      </div>
+
+      <div class="plan-cards">
+        <!-- Starter Plan -->
+        <div class="plan-card">
+          <div class="plan-header">
+            <h4>Starter</h4>
+            <div class="plan-price">
+              <span class="currency">R</span>
+              <span class="amount">85</span>
+              <span class="period">/month</span>
+            </div>
+          </div>
+          <ul class="plan-features">
+            <li>100 mapping rules</li>
+            <li>All object types</li>
+            <li>Webhook triggers</li>
+            <li>Email support</li>
+          </ul>
+          <button class="btn-upgrade" onclick="upgradeToPlan('starter')">
+            Upgrade to Starter
+          </button>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="plan-card plan-featured">
+          <div class="plan-badge">POPULAR</div>
+          <div class="plan-header">
+            <h4>Pro</h4>
+            <div class="plan-price">
+              <span class="currency">R</span>
+              <span class="amount">510</span>
+              <span class="period">/month</span>
+            </div>
+          </div>
+          <ul class="plan-features">
+            <li>500 mapping rules</li>
+            <li>All object types</li>
+            <li>Webhook triggers</li>
+            <li>Priority support</li>
+            <li>Advanced analytics</li>
+          </ul>
+          <button class="btn-upgrade" onclick="upgradeToPlan('pro')">
+            Upgrade to Pro
+          </button>
+        </div>
+
+        <!-- Business Plan -->
+        <div class="plan-card">
+          <div class="plan-header">
+            <h4>Business</h4>
+            <div class="plan-price">
+              <span class="currency">R</span>
+              <span class="amount">850</span>
+              <span class="period">/month</span>
+            </div>
+          </div>
+          <ul class="plan-features">
+            <li>Unlimited mapping rules</li>
+            <li>All object types</li>
+            <li>Webhook triggers</li>
+            <li>Dedicated support</li>
+            <li>Advanced analytics</li>
+            <li>Custom integrations</li>
+          </ul>
+          <button class="btn-upgrade" onclick="upgradeToPlan('business')">
+            Upgrade to Business
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -801,15 +1025,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  let rules = JSON.parse(localStorage.getItem('SyncStation_rules') || '[]');
+  const urlParams = new URLSearchParams(window.location.search);
+  const portalId  = urlParams.get('portalId') || 'Demo';
+  
+  // CRITICAL: Use portal-specific localStorage key to prevent cross-portal contamination
+  const storageKey = `propbridge_rules_${portalId}`;
+  let rules = JSON.parse(localStorage.getItem(storageKey) || '[]');
   let editingId = null;
   let sourceProps = [];
   let targetProps = [];
   let availableObjects = [];
   let syncErrors = [];
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const portalId  = urlParams.get('portalId') || 'Demo';
 
   document.getElementById('portalBadge').textContent  = 'Portal ' + portalId;
   document.getElementById('navSettings').href = '/settings?portalId=' + portalId;
@@ -875,6 +1101,10 @@
   async function loadErrors() {
     try {
       const res = await fetch('/settings/errors?portalId=' + portalId);
+      if (!res.ok) {
+        console.log('Error endpoint returned:', res.status);
+        return;
+      }
       const data = await res.json();
       syncErrors = data.errors || [];
       
@@ -1276,7 +1506,7 @@
   }
 
   function saveRules() {
-    localStorage.setItem('SyncStation_rules', JSON.stringify(rules));
+    localStorage.setItem(storageKey, JSON.stringify(rules));
   }
 
   function showToast(msg, type) {
@@ -1295,10 +1525,9 @@
   fetch('/settings/rules?portalId=' + portalId)
     .then(r => r.json())
     .then(data => {
-      if (data.rules?.length) {
-        rules = data.rules;
-        saveRules();
-      }
+      // ALWAYS update rules from server, even if empty array
+      rules = data.rules || [];
+      saveRules();
       render();
     })
     .catch(() => render());
@@ -1309,13 +1538,13 @@
   // Load available objects (including correct Projects object type ID)
   loadAvailableObjects();
   
-  // Load error count
-  loadErrors();
+  // Load error count (with error handling to prevent crashes)
+  loadErrors().catch(err => console.log('Error loading errors:', err));
   
   // Auto-refresh errors every 30 seconds if error log is visible
   setInterval(() => {
     if (document.getElementById('errorLog').style.display !== 'none') {
-      loadErrors();
+      loadErrors().catch(err => console.log('Error loading errors:', err));
     } else {
       // Just update the count
       fetch('/settings/errors?portalId=' + portalId)
@@ -1325,7 +1554,78 @@
         })
         .catch(() => {});
     }
-  }, 30000);
+
+  // ========== PAYSTACK UPGRADE FUNCTIONS ==========
+  
+  // Upgrade to PayStack plan
+  async function upgradeToPlan(plan) {
+    const email = prompt('Enter your email address for billing:');
+    
+    if (!email || !email.includes('@')) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+
+    try {
+      showToast('Creating checkout session...', 'info');
+
+      const response = await fetch('/paystack/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          portalId: portalId,
+          email: email,
+          plan: plan
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        showToast('Error: ' + (data.error || 'Failed to create checkout session'), 'error');
+      }
+    } catch (err) {
+      console.error('[Upgrade] Error:', err);
+      showToast('Error: ' + err.message, 'error');
+    }
+  }
+
+  // Check tier and show/hide upgrade section
+  async function checkTierAndShowUpgrade() {
+    try {
+      const response = await fetch('/settings/tier?portalId=' + portalId);
+      const data = await response.json();
+
+      const tier = data.tier || 'free';
+      const tierName = tier.toUpperCase();
+      
+      document.getElementById('currentTierName').textContent = tierName;
+      
+      const limits = {
+        free: 30,
+        trial: 30,
+        starter: 100,
+        pro: 500,
+        business: 'Unlimited'
+      };
+      document.getElementById('currentRuleLimit').textContent = limits[tier] || 30;
+
+      if (tier === 'free' || tier === 'trial') {
+        document.getElementById('upgradeSection').style.display = 'block';
+      } else {
+        document.getElementById('upgradeSection').style.display = 'none';
+      }
+
+    } catch (err) {
+      console.error('[Upgrade] Failed to check tier:', err);
+    }
+  }
+
+  // Call on page load
+  loadRules();
+  checkTierAndShowUpgrade();
 </script>
 </body>
 </html>
