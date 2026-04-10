@@ -1,7 +1,7 @@
 // src/services/emailService.js
 const axios = require('axios');
 
-const FROM     = process.env.RESEND_FROM_EMAIL || 'PropBridge <onboarding@resend.dev>';
+const FROM     = process.env.RESEND_FROM_EMAIL || 'syncstation <onboarding@resend.dev>';
 const BASE_URL = process.env.APP_BASE_URL || ('https://' + process.env.RAILWAY_PUBLIC_DOMAIN);
 
 async function sendEmail(to, subject, html) {
@@ -41,11 +41,11 @@ function wrapTemplate(content) {
 <body style="margin:0;padding:0;background:#0f0f11;font-family:'Helvetica Neue',Arial,sans-serif">
   <div style="max-width:560px;margin:40px auto;background:#18181c;border-radius:12px;overflow:hidden;border:1px solid #2e2e38">
     <div style="background:linear-gradient(135deg,#ff6b35,#ffb347);padding:24px 32px;display:flex;align-items:center">
-      <span style="color:white;font-size:22px;font-weight:700;letter-spacing:-0.5px">⇄ PropBridge</span>
+      <span style="color:white;font-size:22px;font-weight:700;letter-spacing:-0.5px">⇄ SyncStation</span>
     </div>
     <div style="padding:32px;color:#f0f0f4">${content}</div>
     <div style="padding:16px 32px;border-top:1px solid #2e2e38;text-align:center">
-      <p style="color:#8888a0;font-size:12px;margin:0">PropBridge — HubSpot Property Sync</p>
+      <p style="color:#8888a0;font-size:12px;margin:0">SyncStation — HubSpot Property Sync</p>
     </div>
   </div>
 </body>
@@ -94,7 +94,7 @@ async function sendRuleEmail(ruleId, to, portalId, extraVars = {}) {
       body    = body.replace(new RegExp(`{{${key}}}`, 'g'), value);
     });
 
-    const html = wrapTemplate(bodyToHtml(body) + btn('Open PropBridge', vars.settingsUrl));
+    const html = wrapTemplate(bodyToHtml(body) + btn('Open SyncStation', vars.settingsUrl));
     const sent = await sendEmail(to, subject, html);
     await logEmail(portalId, ruleId, to, subject, sent ? 'sent' : 'failed');
     return sent;
@@ -135,7 +135,7 @@ async function sendAdminNotification(subject, message) {
   const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail) return;
   const html = wrapTemplate(`<h2 style="color:#f0f0f4;margin:0 0 16px">Admin Alert</h2><p style="color:#c0c0d0">${message}</p>`);
-  return sendEmail(adminEmail, `[PropBridge Admin] ${subject}`, html);
+  return sendEmail(adminEmail, `[SyncStation Admin] ${subject}`, html);
 }
 
 module.exports = {
