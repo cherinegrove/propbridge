@@ -680,8 +680,8 @@
 
   .plan-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
   }
 
   .plan-card {
@@ -859,17 +859,16 @@
           <div class="plan-header">
             <h4>Starter</h4>
             <div class="plan-price">
-              <span class="currency">R</span>
+              <span class="currency">$</span>
               <span class="amount">85</span>
               <span class="period">/month</span>
             </div>
           </div>
           <ul class="plan-features">
             <li>10 property mappings</li>
-            <li>Unlimited sync rules</li>
-            <li>All object types</li>
-            <li>Webhook triggers</li>
-            <li>Email support</li>
+            <li>Real-time webhook sync for standard objects</li>
+            <li>15-min API sync for custom objects</li>
+            <li>Flexible field type mapping</li>
           </ul>
           <button class="btn-upgrade" onclick="upgradeToPlan('starter')">
             Upgrade to Starter
@@ -882,18 +881,16 @@
           <div class="plan-header">
             <h4>Pro</h4>
             <div class="plan-price">
-              <span class="currency">R</span>
+              <span class="currency">$</span>
               <span class="amount">510</span>
               <span class="period">/month</span>
             </div>
           </div>
           <ul class="plan-features">
             <li>30 property mappings</li>
-            <li>Unlimited sync rules</li>
-            <li>All object types</li>
-            <li>Webhook triggers</li>
-            <li>Priority support</li>
-            <li>Advanced analytics</li>
+            <li>Real-time webhook sync for standard objects</li>
+            <li>15-min API sync for custom objects</li>
+            <li>Flexible field type mapping</li>
           </ul>
           <button class="btn-upgrade" onclick="upgradeToPlan('pro')">
             Upgrade to Pro
@@ -905,19 +902,16 @@
           <div class="plan-header">
             <h4>Business</h4>
             <div class="plan-price">
-              <span class="currency">R</span>
+              <span class="currency">$</span>
               <span class="amount">850</span>
               <span class="period">/month</span>
             </div>
           </div>
           <ul class="plan-features">
             <li>100 property mappings</li>
-            <li>Unlimited sync rules</li>
-            <li>All object types</li>
-            <li>Webhook triggers</li>
-            <li>Dedicated support</li>
-            <li>Advanced analytics</li>
-            <li>Custom integrations</li>
+            <li>Real-time webhook sync for standard objects</li>
+            <li>15-min API sync for custom objects</li>
+            <li>Flexible field type mapping</li>
           </ul>
           <button class="btn-upgrade" onclick="upgradeToPlan('business')">
             Upgrade to Business
