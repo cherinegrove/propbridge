@@ -62,11 +62,13 @@ router.post('/portals/:portalId/tier', requireAdmin, async (req, res) => {
     const { portalId } = req.params;
     const { tier } = req.body;
     
+    // Validate tier (check uppercase version in TIERS)
     if (!TIERS[tier.toUpperCase()]) {
       return res.status(400).json({ error: 'Invalid tier' });
     }
     
-    await setPortalTier(portalId, tier.toUpperCase());
+    // Pass lowercase tier to setPortalTier (it handles validation internally)
+    await setPortalTier(portalId, tier.toLowerCase());
     res.json({ ok: true });
   } catch (err) {
     console.error('[Admin] Error setting tier:', err.message);
