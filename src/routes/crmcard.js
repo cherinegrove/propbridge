@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
       results: [
         {
           objectId: parseInt(associatedObjectId),
-          title: "PropBridge Sync Status",
+          title: "SyncStation Sync Status",
           properties: [
             {
               label: "Active Sync Rules",
@@ -85,7 +85,7 @@ router.get('/', async (req, res) => {
       results: [
         {
           objectId: parseInt(associatedObjectId),
-          title: "PropBridge",
+          title: "SyncStation",
           properties: [
             {
               label: "Status",
