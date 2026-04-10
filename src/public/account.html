@@ -172,6 +172,7 @@
   };
 
   let currentTier = 'trial';
+  let lastKnownTier = null;
   let currentUsage = { rules: 0, mappings: 0, maxMappingsPerRule: 0 };
   let selectedTier = '';
 
@@ -187,6 +188,29 @@
       currentTier  = tierRes.tier || 'trial';
       currentUsage = tierRes.usage || { rules: 0, mappings: 0, maxMappingsPerRule: 0 };
 
+      // Detect tier change
+      if (lastKnownTier !== null && lastKnownTier !== currentTier) {
+        const tierNames = {
+          free: 'Free',
+          trial: 'Trial',
+          starter: 'Starter',
+          pro: 'Pro',
+          business: 'Business'
+        };
+        
+        // Show success banner
+        document.getElementById('alertBanner').innerHTML = `
+          <div class="alert-banner alert-success">✅ Your plan has been changed to ${tierNames[currentTier]}!</div>
+        `;
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          document.getElementById('alertBanner').innerHTML = '';
+        }, 5000);
+      }
+      
+      lastKnownTier = currentTier;
+
       const tierInfo      = TIERS[currentTier] || TIERS.trial;
       const isExpired     = tierRes.isExpired;
       const trialDaysLeft = tierRes.trialDaysLeft || 0;
@@ -195,7 +219,7 @@
       document.getElementById('planCard').className = 'plan-card ' + (isExpired ? 'expired' : currentTier);
       document.getElementById('planName').textContent = isExpired ? 'Trial Expired' : tierInfo.name;
       document.getElementById('planDesc').textContent = tierInfo.desc || '';
-      document.getElementById('planPrice').textContent = currentTier === 'trial' ? 'Free' : '$' + tierInfo.price;
+      document.getElementById('planPrice').textContent = currentTier === 'trial' ? 'Free' : 'R' + tierInfo.price;
 
       // Dates
       const trialStart  = tierRes.trial_started_at;
@@ -370,7 +394,18 @@
     if (e.target === this) closeModal();
   });
 
-  load();
+  // Start tier monitoring
+  function startTierMonitoring() {
+    // Load immediately
+    load();
+    
+    // Then check every 30 seconds
+    setInterval(() => {
+      load();
+    }, 30000); // 30 seconds
+  }
+
+  startTierMonitoring();
 </script>
 </body>
 </html>
