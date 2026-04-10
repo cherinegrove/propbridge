@@ -175,7 +175,7 @@ router.post('/create-subscription', async (req, res) => {
         email,
         amount: getPlanAmount(plan), // in kobo (cents)
         plan: paystackPlanCode,
-        callback_url: `${process.env.APP_URL || 'https://propbridge-production.up.railway.app'}/settings?portal_id=${portalId}`,
+        callback_url: `${process.env.APP_URL || 'https://syncstation-production.up.railway.app'}/settings?portal_id=${portalId}`,
         metadata: {
           portal_id: portalId,
           plan: plan
