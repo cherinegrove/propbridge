@@ -21,11 +21,18 @@ function getPool() {
 }
 
 function requireAdmin(req, res, next) {
-  const key = req.query.key || req.headers['x-admin-key'];
-  if (process.env.ADMIN_KEY && key !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  // Check if admin is authenticated via session
+  if (req.session && req.session.adminId) {
+    return next();
   }
-  next();
+  
+  // Not authenticated - redirect to login for HTML requests
+  if (req.accepts('html')) {
+    return res.redirect('/admin/auth/login');
+  }
+  
+  // Return 401 for API requests
+  res.status(401).json({ error: 'Not authenticated' });
 }
 
 // GET /admin
