@@ -329,6 +329,11 @@ router.post('/accept-invite', async (req, res) => {
   }
 });
 
+// GET /admin/auth/forgot-password - Show forgot password page
+router.get('/forgot-password', (req, res) => {
+  res.sendFile(require('path').join(__dirname, '../public/admin-forgot-password.html'));
+});
+
 // POST /admin/auth/forgot-password - Request password reset
 router.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
