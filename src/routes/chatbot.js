@@ -4,6 +4,9 @@ const router = express.Router();
 const { Pool } = require('pg');
 const { getPortalTier } = require('../services/tierService');
 
+console.log('🟢🟢🟢 CHATBOT ROUTE FILE LOADED 🟢🟢🟢');
+console.log('🟢 This proves the new chatbot.js file is being used');
+
 let pool = null;
 
 function getPool() {
