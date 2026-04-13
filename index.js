@@ -96,6 +96,11 @@ app.get('/settings', (req, res) => {
   res.sendFile(path.join(__dirname, 'src/public/settings.html'));
 });
 
+// Account page route (for portal users)
+app.get('/account', (req, res) => {
+  res.sendFile(path.join(__dirname, 'src/public/account.html'));
+});
+
 // Root route - redirect to account page or info page
 app.get('/', (req, res) => {
   res.redirect('/account.html');
