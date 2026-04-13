@@ -266,7 +266,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const TIER_PRICES = { trial: 0, starter: 85, pro: 510, business: 850, cancelled: 0, suspended: 0, free: 0 };
+  const TIER_PRICES = { trial: 0, starter: 10, pro: 15, business: 40, cancelled: 0, suspended: 0, free: 0 };
   const adminKey    = new URLSearchParams(window.location.search).get('key') || '';
 
   function showPanel(name, el) {
@@ -359,9 +359,9 @@
           <select id="tier-${p.portal_id}" style="width:155px">
             <option value="free"      ${p.tier==='free'?'selected':''}>Free</option>
             <option value="trial"     ${p.tier==='trial'?'selected':''}>Trial</option>
-            <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($85)</option>
-            <option value="pro"       ${p.tier==='pro'?'selected':''}>Pro ($510)</option>
-            <option value="business"  ${p.tier==='business'?'selected':''}>Business ($850)</option>
+            <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($10)</option>
+            <option value="pro"       ${p.tier==='pro'?'selected':''}>Pro ($15)</option>
+            <option value="business"  ${p.tier==='business'?'selected':''}>Business ($40)</option>
             <option value="suspended" ${p.tier==='suspended'?'selected':''}>🚫 Suspended</option>
             <option value="cancelled" ${p.tier==='cancelled'?'selected':''}>❌ Cancelled</option>
           </select>
