@@ -47,12 +47,28 @@ router.post('/initialize', async (req, res) => {
     const https = require('https');
     const planCode = PLAN_CODES[plan];
 
+    // Amount in kobo (cents) - PayStack requires this even with plan code
+    const amounts = {
+      starter: 1000,  // $10
+      pro: 1500,      // $15
+      business: 4000  // $40
+    };
+
     const params = JSON.stringify({
       email,
+      amount: amounts[plan],
       plan: planCode,
+      currency: 'USD',
       metadata: {
         portal_id: portalId,
-        plan_tier: plan
+        plan_tier: plan,
+        custom_fields: [
+          {
+            display_name: 'Portal ID',
+            variable_name: 'portal_id',
+            value: portalId
+          }
+        ]
       }
     });
 
