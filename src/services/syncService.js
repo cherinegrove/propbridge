@@ -2,6 +2,37 @@
 
 const axios = require('axios');
 
+// 🆕 GLOBAL RATE LIMITER - Track API calls to prevent exceeding limits
+class RateLimiter {
+  constructor(maxCalls = 10, windowMs = 10000) {
+    this.maxCalls = maxCalls;
+    this.windowMs = windowMs;
+    this.calls = [];
+  }
+  
+  async waitIfNeeded() {
+    const now = Date.now();
+    // Remove calls outside the current window
+    this.calls = this.calls.filter(callTime => now - callTime < this.windowMs);
+    
+    if (this.calls.length >= this.maxCalls) {
+      // We're at the limit, wait until the oldest call expires
+      const oldestCall = this.calls[0];
+      const waitTime = this.windowMs - (now - oldestCall) + 100; // +100ms buffer
+      console.log(`[RateLimiter] At limit (${this.calls.length}/${this.maxCalls}). Waiting ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      // Remove the oldest call after waiting
+      this.calls.shift();
+    }
+    
+    // Record this call
+    this.calls.push(Date.now());
+  }
+}
+
+// Create a global rate limiter instance - 10 calls per 10 seconds
+const globalRateLimiter = new RateLimiter(10, 10000);
+
 // Standard HubSpot CRM objects
 const STANDARD_OBJECTS = [
   'contacts', 'companies', 'deals', 'tickets', 'leads',
@@ -114,10 +145,10 @@ async function retryWithBackoff(fn, maxRetries = 5) {  // Increased from 3 to 5
       
       // Only retry on rate limit errors
       if (errorInfo.type === ERROR_TYPES.RATE_LIMIT && attempt < maxRetries) {
-        // 🔥 CRITICAL: Exponential backoff with jitter
+        // 🔥 CRITICAL: Exponential backoff with jitter - MUCH more aggressive
         const baseWaitTime = errorInfo.rateLimitInfo?.intervalMs || 10000;
-        const exponentialFactor = Math.pow(2, attempt - 1);  // 1, 2, 4, 8, 16
-        const jitter = Math.random() * 1000;  // 0-1000ms random jitter
+        const exponentialFactor = Math.pow(3, attempt - 1);  // CHANGED: 1, 3, 9, 27, 81 (was 2^n)
+        const jitter = Math.random() * 2000;  // INCREASED: 0-2000ms random jitter (was 1000ms)
         const backoffTime = baseWaitTime * exponentialFactor + jitter;
         
         console.log(`[Sync] ⏳ Rate limit hit. Waiting ${Math.round(backoffTime)}ms before retry ${attempt}/${maxRetries}...`);
@@ -135,6 +166,9 @@ async function retryWithBackoff(fn, maxRetries = 5) {  // Increased from 3 to 5
 
 // 🆕 Get properties with retry logic
 async function getProperties(client, objectType, objectId, properties, portalId) {
+  // 🔥 CRITICAL: Wait if we're at rate limit
+  await globalRateLimiter.waitIfNeeded();
+  
   return retryWithBackoff(async () => {
     try {
       // For custom objects, use direct axios call to ensure proper endpoint
@@ -183,6 +217,9 @@ async function getProperties(client, objectType, objectId, properties, portalId)
 
 // 🆕 Update properties with retry logic
 async function updateProperties(client, objectType, objectId, properties, portalId) {
+  // 🔥 CRITICAL: Wait if we're at rate limit
+  await globalRateLimiter.waitIfNeeded();
+  
   return retryWithBackoff(async () => {
     try {
       // For custom objects, use direct axios call
@@ -233,6 +270,9 @@ async function updateProperties(client, objectType, objectId, properties, portal
 
 // Get associations between objects (works for both standard and custom)
 async function getAssociations(client, fromObjectType, fromObjectId, toObjectType) {
+  // 🔥 CRITICAL: Wait if we're at rate limit
+  await globalRateLimiter.waitIfNeeded();
+  
   try {
     // Try v4 associations API first (supports custom objects)
     const response = await client.crm.associations.v4.basicApi.getPage(
