@@ -304,13 +304,13 @@ async function pollObjectType(portalId, objectType) {
     let syncedCount = 0;
     let errorCount = 0;
     
-    // 🔥 CRITICAL FIX: Reduced batch size and increased delays to prevent rate limiting
-    // HubSpot limit: 110 calls per 10 seconds
-    // With 8 rules per contact: 1 contact = ~16 API calls (fetch source + fetch targets + updates)
-    // Safe rate: Process 3-5 records per batch with 5 second breaks
-    const BATCH_SIZE = 5;  // REDUCED from 20 to 5
-    const DELAY_BETWEEN_SYNCS = 500;  // INCREASED from 150ms to 500ms
-    const DELAY_BETWEEN_BATCHES = 5000;  // INCREASED from 2s to 5s
+    // 🔥 CRITICAL FIX: Aggressive rate limiting to prevent 429 errors
+    // HubSpot limit: 10 calls per 10 seconds (ten_secondly_rolling)
+    // With multiple rules per contact: 1 contact = ~16 API calls (fetch source + fetch targets + updates)
+    // Safe rate: Process 1 record at a time with long delays between rules
+    const BATCH_SIZE = 1;  // Process ONE record at a time
+    const DELAY_BETWEEN_SYNCS = 1200;  // 1.2 seconds between each sync rule execution
+    const DELAY_BETWEEN_BATCHES = 8000;  // 8 seconds between batches (records)
     
     for (let batchStart = 0; batchStart < changedRecords.length; batchStart += BATCH_SIZE) {
       const batch = changedRecords.slice(batchStart, batchStart + BATCH_SIZE);
