@@ -125,6 +125,10 @@ router.get('/tier', async (req, res) => {
   
   try {
     const tierInfo = await getPortalTier(portalId);
+    // Prevent caching of tier information
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json(tierInfo);
   } catch (err) {
     console.error('[Settings] Error getting tier:', err.message);
