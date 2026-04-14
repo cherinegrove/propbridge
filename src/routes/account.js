@@ -56,6 +56,11 @@ router.get('/tier', async (req, res) => {
   const totalMappings      = rules.reduce((sum, r) => sum + (r.mappings?.length || 0), 0);
   const maxMappingsPerRule = rules.length ? Math.max(...rules.map(r => r.mappings?.length || 0)) : 0;
 
+  // Prevent caching of tier information
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  
   res.json({
     ...tierInfo,
     trial_started_at,
