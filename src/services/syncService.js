@@ -101,8 +101,8 @@ function parseApiError(err, objectType) {
   };
 }
 
-// 🆕 HELPER: Retry with exponential backoff for rate limits
-async function retryWithBackoff(fn, maxRetries = 3) {
+// 🔥 CRITICAL: Enhanced retry with exponential backoff for rate limits
+async function retryWithBackoff(fn, maxRetries = 5) {  // Increased from 3 to 5
   let lastError;
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -114,10 +114,13 @@ async function retryWithBackoff(fn, maxRetries = 3) {
       
       // Only retry on rate limit errors
       if (errorInfo.type === ERROR_TYPES.RATE_LIMIT && attempt < maxRetries) {
-        const waitTime = errorInfo.rateLimitInfo?.intervalMs || 10000;
-        const backoffTime = waitTime + (attempt * 1000); // Add extra time per retry
+        // 🔥 CRITICAL: Exponential backoff with jitter
+        const baseWaitTime = errorInfo.rateLimitInfo?.intervalMs || 10000;
+        const exponentialFactor = Math.pow(2, attempt - 1);  // 1, 2, 4, 8, 16
+        const jitter = Math.random() * 1000;  // 0-1000ms random jitter
+        const backoffTime = baseWaitTime * exponentialFactor + jitter;
         
-        console.log(`[Sync] Rate limit hit. Waiting ${backoffTime}ms before retry ${attempt}/${maxRetries}...`);
+        console.log(`[Sync] ⏳ Rate limit hit. Waiting ${Math.round(backoffTime)}ms before retry ${attempt}/${maxRetries}...`);
         await new Promise(resolve => setTimeout(resolve, backoffTime));
         continue;
       }
