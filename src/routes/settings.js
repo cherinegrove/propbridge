@@ -125,6 +125,7 @@ router.get('/tier', async (req, res) => {
   
   try {
     const tierInfo = await getPortalTier(portalId);
+    console.log('[Settings] GET /tier for portal', portalId, '- returning:', tierInfo.tier);
     // Prevent caching of tier information
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.set('Pragma', 'no-cache');
