@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - SyncStation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .register-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #2563eb;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .logo p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .password-requirements {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        
+        .password-requirements ul {
+            margin: 5px 0 0 20px;
+        }
+        
+        .password-requirements li {
+            margin: 3px 0;
+        }
+        
+        .password-requirements li.valid {
+            color: #10b981;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .links a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        
+        .links a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #9ca3af;
+            font-size: 14px;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="logo">
+            <h1>SyncStation</h1>
+            <p>Create Your Account</p>
+        </div>
+        
+        <div id="alertContainer"></div>
+        
+        <div class="info-box">
+            💡 Register as the first user for your HubSpot portal to become the portal owner.
+        </div>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input 
+                    type="text" 
+                    id="fullName" 
+                    name="fullName" 
+                    required 
+                    placeholder="John Doe"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    autocomplete="email"
+                    placeholder="you@company.com"
+                >
+            </div>
+            
+            <div class="form-group">
+                <label for="portalId">HubSpot Portal ID</label>
+                <input 
+                    type="text" 
+                    id="portalId" 
+                    name="portalId" 
+                    required 
+                    placeholder="24888076"
+                >
+                <div style="font-size: 12px; color: #6b7280; margin-top: 5px;">
+                    Find this in your HubSpot account settings
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required
+                    placeholder="Create a strong password"
+                >
+                <div class="password-requirements">
+                    <strong>Password must:</strong>
+                    <ul id="requirements">
+                        <li id="req-length">Be at least 8 characters long</li>
+                        <li id="req-uppercase">Include an uppercase letter</li>
+                        <li id="req-lowercase">Include a lowercase letter</li>
+                        <li id="req-number">Include a number</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    required
+                    placeholder="Re-enter your password"
+                >
+            </div>
+            
+            <button type="submit" class="btn" id="registerBtn" disabled>
+                Create Account
+            </button>
+        </form>
+        
+        <div class="divider">
+            Already have an account?
+        </div>
+        
+        <div class="links">
+            <a href="/login">Sign in instead</a>
+        </div>
+    </div>
+    
+    <script>
+        const registerForm = document.getElementById('registerForm');
+        const registerBtn = document.getElementById('registerBtn');
+        const alertContainer = document.getElementById('alertContainer');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        
+        // Get portal ID from URL if provided
+        const urlParams = new URLSearchParams(window.location.search);
+        const portalIdFromUrl = urlParams.get('portal');
+        if (portalIdFromUrl) {
+            document.getElementById('portalId').value = portalIdFromUrl;
+        }
+        
+        // Password validation
+        const requirements = {
+            length: false,
+            uppercase: false,
+            lowercase: false,
+            number: false
+        };
+        
+        function validatePassword(password) {
+            requirements.length = password.length >= 8;
+            requirements.uppercase = /[A-Z]/.test(password);
+            requirements.lowercase = /[a-z]/.test(password);
+            requirements.number = /[0-9]/.test(password);
+            
+            // Update UI
+            document.getElementById('req-length').classList.toggle('valid', requirements.length);
+            document.getElementById('req-uppercase').classList.toggle('valid', requirements.uppercase);
+            document.getElementById('req-lowercase').classList.toggle('valid', requirements.lowercase);
+            document.getElementById('req-number').classList.toggle('valid', requirements.number);
+            
+            return Object.values(requirements).every(r => r);
+        }
+        
+        passwordInput.addEventListener('input', (e) => {
+            const isValid = validatePassword(e.target.value);
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (isValid && confirmPassword && e.target.value === confirmPassword) {
+                registerBtn.disabled = false;
+            } else {
+                registerBtn.disabled = true;
+            }
+        });
+        
+        confirmPasswordInput.addEventListener('input', (e) => {
+            const password = passwordInput.value;
+            const isValid = validatePassword(password);
+            
+            if (isValid && password === e.target.value) {
+                registerBtn.disabled = false;
+            } else {
+                registerBtn.disabled = true;
+            }
+        });
+        
+        // Show alert
+        function showAlert(message, type = 'error') {
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-dismiss success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertContainer.innerHTML = '';
+                }, 5000);
+            }
+        }
+        
+        // Handle registration
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const portalId = document.getElementById('portalId').value;
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (password !== confirmPassword) {
+                showAlert('Passwords do not match');
+                return;
+            }
+            
+            if (!validatePassword(password)) {
+                showAlert('Password does not meet requirements');
+                return;
+            }
+            
+            registerBtn.disabled = true;
+            registerBtn.textContent = 'Creating account...';
+            alertContainer.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        fullName,
+                        portalId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+                
+                showAlert(
+                    'Account created successfully! Please check your email to verify your account.',
+                    'success'
+                );
+                
+                // Redirect to login after 3 seconds
+                setTimeout(() => {
+                    window.location.href = '/login?registered=true';
+                }, 3000);
+                
+            } catch (error) {
+                showAlert(error.message);
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>
