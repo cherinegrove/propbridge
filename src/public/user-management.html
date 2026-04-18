@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - PropBridge</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #6b7280;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .users-table th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .users-table td {
+            padding: 16px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #1f2937;
+        }
+        
+        .users-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-owner {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .badge-admin {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .badge-user {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .badge-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: #1f2937;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
+        }
+        
+        .close-btn:hover {
+            color: #1f2937;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+        
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>User Management</h1>
+            <p>Manage users who have access to this portal</p>
+        </div>
+        
+        <div id="alertContainer"></div>
+        
+        <div class="actions">
+            <div>
+                <span id="userCount" style="color: #6b7280; font-size: 14px;"></span>
+            </div>
+            <button class="btn btn-primary" onclick="openInviteModal()">
+                + Invite User
+            </button>
+        </div>
+        
+        <div class="card">
+            <div id="loadingState" class="empty-state">
+                <div class="empty-state-icon">⏳</div>
+                <h3>Loading users...</h3>
+            </div>
+            
+            <div id="emptyState" class="empty-state hidden">
+                <div class="empty-state-icon">👥</div>
+                <h3>No Users Yet</h3>
+                <p>Invite team members to collaborate on this portal</p>
+                <button class="btn btn-primary" onclick="openInviteModal()" style="margin-top: 20px;">
+                    Invite Your First User
+                </button>
+            </div>
+            
+            <div id="usersTableContainer" class="hidden">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Invited By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Invite User Modal -->
+    <div id="inviteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Invite User</h2>
+                <button class="close-btn" onclick="closeInviteModal()">&times;</button>
+            </div>
+            
+            <div id="modalAlert"></div>
+            
+            <form id="inviteForm">
+                <div class="form-group">
+                    <label for="userEmail">Email Address</label>
+                    <input type="email" id="userEmail" required placeholder="user@company.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userFullName">Full Name</label>
+                    <input type="text" id="userFullName" required placeholder="John Doe">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userRole">Role</label>
+                    <select id="userRole" required>
+                        <option value="user">User - Can view and create sync rules</option>
+                        <option value="admin">Admin - Can manage users and settings</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeInviteModal()" style="flex: 1;">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="inviteBtn" style="flex: 1;">
+                        Send Invitation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let currentUser = null;
+        let portalId = null;
+        let sessionToken = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Get session token
+            sessionToken = localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
+            
+            if (!sessionToken) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Get portal ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            portalId = urlParams.get('portal');
+            
+            if (!portalId) {
+                showAlert('Portal ID is required', 'error');
+                return;
+            }
+            
+            // Verify session and get current user
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Session expired');
+                }
+                
+                const data = await response.json();
+                currentUser = data.user;
+                
+                // Load users
+                await loadUsers();
+                
+            } catch (error) {
+                window.location.href = '/login';
+            }
+        });
+        
+        // Load users
+        async function loadUsers() {
+            try {
+                const response = await fetch(`/api/users/portal/${portalId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load users');
+                }
+                
+                const data = await response.json();
+                displayUsers(data.users);
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+                document.getElementById('loadingState').classList.add('hidden');
+                document.getElementById('emptyState').classList.remove('hidden');
+            }
+        }
+        
+        // Display users
+        function displayUsers(users) {
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const tableContainer = document.getElementById('usersTableContainer');
+            const tableBody = document.getElementById('usersTableBody');
+            const userCount = document.getElementById('userCount');
+            
+            loadingState.classList.add('hidden');
+            
+            if (users.length === 0) {
+                emptyState.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            tableContainer.classList.remove('hidden');
+            
+            userCount.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+            
+            tableBody.innerHTML = users.map(user => `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${user.full_name}</div>
+                        <div style="color: #6b7280; font-size: 12px;">${user.email}</div>
+                        ${!user.email_verified ? '<div style="color: #ef4444; font-size: 12px;">⚠️ Email not verified</div>' : ''}
+                    </td>
+                    <td>
+                        <span class="badge badge-${user.role}">${user.role.toUpperCase()}</span>
+                    </td>
+                    <td>
+                        <span class="badge ${user.portal_active && user.user_active ? 'badge-active' : 'badge-inactive'}">
+                            ${user.portal_active && user.user_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>
+                        ${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                    </td>
+                    <td>
+                        ${user.invited_by_name || '-'}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            ${user.role !== 'owner' && user.id !== currentUser.userId ? `
+                                <button class="btn btn-small btn-danger" onclick="removeUser(${user.id}, '${user.full_name}')">
+                                    Remove
+                                </button>
+                            ` : '-'}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Show alert
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        // Modal functions
+        function openInviteModal() {
+            document.getElementById('inviteModal').classList.add('show');
+            document.getElementById('inviteForm').reset();
+            document.getElementById('modalAlert').innerHTML = '';
+        }
+        
+        function closeInviteModal() {
+            document.getElementById('inviteModal').classList.remove('show');
+        }
+        
+        // Invite user
+        document.getElementById('inviteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('userEmail').value;
+            const fullName = document.getElementById('userFullName').value;
+            const role = document.getElementById('userRole').value;
+            const inviteBtn = document.getElementById('inviteBtn');
+            const modalAlert = document.getElementById('modalAlert');
+            
+            inviteBtn.disabled = true;
+            inviteBtn.textContent = 'Sending...';
+            modalAlert.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/users/invite', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        fullName,
+                        portalId,
+                        role
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to invite user');
+                }
+                
+                closeInviteModal();
+                showAlert('User invited successfully! They will receive an email with login instructions.', 'success');
+                await loadUsers();
+                
+            } catch (error) {
+                modalAlert.innerHTML = `<div class="alert alert-error">${error.message}</div>`;
+            } finally {
+                inviteBtn.disabled = false;
+                inviteBtn.textContent = 'Send Invitation';
+            }
+        });
+        
+        // Remove user
+        async function removeUser(userId, userName) {
+            if (!confirm(`Are you sure you want to remove ${userName} from this portal?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${sessionToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ portalId })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to remove user');
+                }
+                
+                showAlert('User removed successfully', 'success');
+                await loadUsers();
+                
+            } catch (error) {
+                showAlert(error.message, 'error');
+            }
+        }
+        
+        // Close modal on outside click
+        document.getElementById('inviteModal').addEventListener('click', (e) => {
+            if (e.target.id === 'inviteModal') {
+                closeInviteModal();
+            }
+        });
+    </script>
+</body>
+</html>
