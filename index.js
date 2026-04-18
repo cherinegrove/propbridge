@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 
 // ==================== AUTHENTICATION ROUTES ====================
 
-// User authentication and management
+// User authentication and management API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authRoutes);
 
@@ -62,6 +62,20 @@ app.get('/admin', async (req, res) => {
     } catch (error) {
         console.error('Admin error:', error);
         res.status(500).send('Error loading admin');
+    }
+});
+
+// Admin portals endpoint
+app.get('/admin/portals', async (req, res) => {
+    try {
+        // Your existing admin portals logic
+        const result = await pool.query(
+            'SELECT * FROM portals ORDER BY created_at DESC'
+        );
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Admin portals error:', error);
+        res.status(500).json({ error: 'Failed to fetch portals' });
     }
 });
 
@@ -104,26 +118,27 @@ app.get('/api/account/tier', async (req, res) => {
     }
 });
 
-// ==================== NEW AUTHENTICATION FRONTEND ROUTES ====================
+// ==================== AUTHENTICATION FRONTEND ROUTES ====================
 
-// Login page
+// Redirect to static HTML files (served by express.static)
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'src', 'public', 'login.html'));
+    res.redirect('/login.html');
 });
 
-// Forgot password page
+app.get('/register', (req, res) => {
+    res.redirect('/register.html');
+});
+
 app.get('/forgot-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'src', 'public', 'forgot-password.html'));
+    res.redirect('/forgot-password.html');
 });
 
-// Reset password page
 app.get('/reset-password', (req, res) => {
-    res.sendFile(path.join(__dirname, 'src', 'public', 'reset-password.html'));
+    res.redirect('/reset-password.html');
 });
 
-// User management page
 app.get('/user-management', (req, res) => {
-    res.sendFile(path.join(__dirname, 'src', 'public', 'user-management.html'));
+    res.redirect('/user-management.html');
 });
 
 // Email verification endpoint (handles link from email)
@@ -134,12 +149,13 @@ app.get('/verify-email', (req, res) => {
         return res.status(400).send('Verification token is required');
     }
     
-    // Redirect to a verification page with the token
+    // Inline verification page with API call
     res.send(`
         <!DOCTYPE html>
         <html>
         <head>
             <title>Email Verification - SyncStation</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -158,7 +174,7 @@ app.get('/verify-email', (req, res) => {
                     text-align: center;
                     max-width: 400px;
                 }
-                h1 { color: #2563eb; }
+                h1 { color: #2563eb; margin-bottom: 20px; }
                 .spinner { 
                     border: 4px solid #f3f3f3;
                     border-top: 4px solid #2563eb;
@@ -172,6 +188,22 @@ app.get('/verify-email', (req, res) => {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
+                .success { color: #10b981; font-size: 64px; margin-bottom: 20px; }
+                .error { color: #ef4444; font-size: 64px; margin-bottom: 20px; }
+                a {
+                    display: inline-block;
+                    margin-top: 20px;
+                    padding: 12px 30px;
+                    background: #2563eb;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: 600;
+                }
+                a:hover {
+                    background: #1d4ed8;
+                }
+                p { color: #6b7280; line-height: 1.6; }
             </style>
         </head>
         <body>
@@ -186,18 +218,21 @@ app.get('/verify-email', (req, res) => {
                     .then(data => {
                         if (data.success) {
                             document.querySelector('.container').innerHTML = 
-                                '<h1>✅ Email Verified!</h1>' +
-                                '<p>Your email has been verified successfully.</p>' +
-                                '<p><a href="/login" style="color: #2563eb;">Go to Login</a></p>';
+                                '<div class="success">✅</div>' +
+                                '<h1>Email Verified!</h1>' +
+                                '<p>Your email has been verified successfully. You can now login to your account.</p>' +
+                                '<a href="/login">Go to Login</a>';
                         } else {
                             throw new Error(data.error || 'Verification failed');
                         }
                     })
                     .catch(error => {
                         document.querySelector('.container').innerHTML = 
-                            '<h1>❌ Verification Failed</h1>' +
+                            '<div class="error">❌</div>' +
+                            '<h1>Verification Failed</h1>' +
                             '<p>' + error.message + '</p>' +
-                            '<p><a href="/login" style="color: #2563eb;">Go to Login</a></p>';
+                            '<p>The verification link may have expired or already been used.</p>' +
+                            '<a href="/login">Go to Login</a>';
                     });
             </script>
         </body>
@@ -212,7 +247,8 @@ app.get('/health', (req, res) => {
         status: 'ok', 
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        app: 'SyncStation'
+        app: 'SyncStation',
+        version: '1.0.0'
     });
 });
 
@@ -275,6 +311,7 @@ async function startServer() {
             console.log(`📡 Server: http://localhost:${PORT}`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
             console.log(`🔐 Login: https://syncstation.app/login`);
+            console.log(`📝 Register: https://syncstation.app/register`);
             console.log(`⚙️  Settings: https://syncstation.app/settings`);
             console.log(`👑 Admin: https://syncstation.app/admin`);
             console.log(`👥 User Mgmt: https://syncstation.app/user-management`);
