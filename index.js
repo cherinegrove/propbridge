@@ -1,186 +1,190 @@
-// index.js - Main application file for SyncStation
-const express = require('express');
-const session = require('express-session');
-const pgSession = require('connect-pg-simple')(session);
-const { Pool } = require('pg');
-const path = require('path');
+// =====================================================
+// PROPBRIDGE MAIN SERVER
+// With User Authentication & Management
+// =====================================================
 
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+
+// Database connection
+const pool = require('./src/services/database');
+
+// Routes
+const authRoutes = require('./src/routes/authRoutes');
+
+// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// ==================== MIDDLEWARE ====================
 
-// Test database connection
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('❌ Database connection error:', err.message);
-  } else {
-    console.log('✅ Database connected:', res.rows[0].now);
-  }
-});
-
-// ============================================
-// 🆕 POLLING SERVICE INITIALIZATION
-// ============================================
-const { runPollingCycle, initPollingTable } = require('./src/services/pollingService');
-
-(async () => {
-  try {
-    // Initialize polling table
-    await initPollingTable();
-    console.log('[Polling] Table ready');
-    
-    // Run first polling cycle immediately
-    console.log('[Polling] Running initial polling cycle...');
-    runPollingCycle().catch(err => {
-      console.error('[Polling] Initial cycle error:', err.message);
-    });
-    
-    // Schedule polling every 15 minutes
-    setInterval(() => {
-      runPollingCycle().catch(err => {
-        console.error('[Polling] Cycle error:', err.message);
-      });
-    }, 15 * 60 * 1000);
-    
-    console.log('[Polling] ✅ Polling service started (runs every 15 minutes)');
-  } catch (err) {
-    console.error('[Polling] ❌ Initialization error:', err.message);
-  }
-})();
-
-// ============================================
-// MIDDLEWARE
-// ============================================
-
-// Body parser middleware
+// Parse JSON bodies
 app.use(express.json());
+
+// Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
 
-// Static files (serves files from /src/public)
-app.use(express.static(path.join(__dirname, 'src/public')));
+// Parse cookies
+app.use(cookieParser());
 
-// ============================================
-// SESSION MIDDLEWARE (MUST BE BEFORE ROUTES)
-// ============================================
-app.use(session({
-  store: new pgSession({
-    pool: pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }),
-  secret: process.env.SESSION_SECRET || 'CHANGE-THIS-IN-PRODUCTION-USE-RANDOM-STRING',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: false // Set to false for now to debug
-  },
-  name: 'syncstation.sid' // Custom cookie name
-}));
+// Serve static files from public directory
+app.use(express.static('public'));
 
-// Request logging middleware
+// CORS (if needed for development)
+if (process.env.NODE_ENV === 'development') {
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        next();
+    });
+}
+
+// Request logging
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
 });
 
-// ============================================
-// ROUTES
-// ============================================
+// ==================== AUTHENTICATION ROUTES ====================
 
-// Health check endpoint
+// User authentication and management
+app.use('/api/auth', authRoutes);
+app.use('/api/users', authRoutes);
+
+// ==================== YOUR EXISTING PROPBRIDGE ROUTES ====================
+// Add your existing routes here:
+
+// Example: HubSpot OAuth callback
+// app.get('/oauth/callback', async (req, res) => {
+//     // Your existing OAuth code
+// });
+
+// Example: Settings page
+// app.get('/settings', async (req, res) => {
+//     // Your existing settings code
+// });
+
+// Example: Sync rules API
+// app.get('/api/sync-rules/:portalId', async (req, res) => {
+//     // Your existing sync rules code
+// });
+
+// Example: Admin portal
+// app.get('/admin', async (req, res) => {
+//     // Your existing admin code
+// });
+
+// ==================== FRONTEND ROUTES ====================
+
+// Login page (public)
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Registration page (public)
+app.get('/register', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+// Forgot password page (public)
+app.get('/forgot-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'forgot-password.html'));
+});
+
+// Reset password page (public)
+app.get('/reset-password', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'reset-password.html'));
+});
+
+// User management page (protected - add auth middleware later)
+app.get('/user-management', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'user-management.html'));
+});
+
+// ==================== HEALTH CHECK ====================
+
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
 });
 
-// Admin authentication routes (NEW - must be before /admin)
-app.use('/admin/auth', require('./src/routes/admin-auth'));
+// ==================== DATABASE CONNECTION TEST ====================
 
-// Admin portal routes (UPDATED - now uses session auth)
-app.use('/admin', require('./src/routes/admin'));
+// Test database connection on startup
+async function testDatabaseConnection() {
+    try {
+        const result = await pool.query('SELECT NOW()');
+        console.log('✅ Database connected:', result.rows[0].now);
+    } catch (error) {
+        console.error('❌ Database connection error:', error);
+        process.exit(1);
+    }
+}
 
-// API routes (add your existing routes here)
-app.use('/api/account', require('./src/routes/account'));
-app.use('/api/action', require('./src/routes/action'));
-app.use('/api/crmcard', require('./src/routes/crmcard'));
-app.use('/api/notifications', require('./src/routes/notifications'));
-app.use('/api/oauth', require('./src/routes/oauth'));
-app.use('/api/paddle', require('./src/routes/paddle'));
-app.use('/api/chatbot', require('./src/routes/chatbot'));
-app.use('/api/settings', require('./src/routes/settings'));
-app.use('/api/stripe', require('./src/routes/stripe'));
-app.use('/webhooks', require('./src/routes/webhooks')); // FIXED: Must be /webhooks not /api/webhooks - HubSpot sends to /webhooks/receive
-
-// Settings API at /settings (backward compatibility)
-app.use('/settings', require('./src/routes/settings'));
-
-// Account page route (for portal users)
-app.get('/account', (req, res) => {
-  res.sendFile(path.join(__dirname, 'src/public/account.html'));
-});
-
-// Root route - redirect to account page or info page
-app.get('/', (req, res) => {
-  res.redirect('/account.html');
-});
-
-// ============================================
-// ERROR HANDLING
-// ============================================
+// ==================== ERROR HANDLING ====================
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Not Found',
-    path: req.path,
-    message: 'The requested resource does not exist'
-  });
+    res.status(404).json({ 
+        error: 'Not Found',
+        path: req.path,
+        message: 'The requested resource does not exist'
+    });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.message);
-  console.error(err.stack);
-  
-  res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message,
-    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
-  });
+    console.error('Error:', err);
+    
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
 });
 
-// ============================================
-// START SERVER
-// ============================================
+// ==================== START SERVER ====================
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log('━'.repeat(50));
-  console.log('🚀 SyncStation Server Running');
-  console.log('━'.repeat(50));
-  console.log(`📍 Port: ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Admin Portal: http://localhost:${PORT}/admin`);
-  console.log(`🔐 Admin Login: http://localhost:${PORT}/admin/auth/login`);
-  console.log('━'.repeat(50));
-  console.log('');
-});
+async function startServer() {
+    try {
+        // Test database connection
+        await testDatabaseConnection();
+        
+        // Start listening
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log('');
+            console.log('🚀 PropBridge Server Started!');
+            console.log('================================');
+            console.log(`📡 Server: http://localhost:${PORT}`);
+            console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🔐 Login: http://localhost:${PORT}/login`);
+            console.log(`👥 User Mgmt: http://localhost:${PORT}/user-management`);
+            console.log('================================');
+            console.log('');
+        });
+        
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
+}
 
-// Graceful shutdown
+// Handle graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM received, closing server...');
-  pool.end(() => {
-    console.log('✅ Database pool closed');
+    console.log('SIGTERM received, closing server...');
     process.exit(0);
-  });
 });
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, closing server...');
+    process.exit(0);
+});
+
+// Start the server
+startServer();
+
+module.exports = app;
