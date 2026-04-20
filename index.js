@@ -311,11 +311,11 @@ async function startServer() {
             console.log('================================');
             console.log(`📡 Server: http://localhost:${PORT}`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
-            console.log(`🔐 Login: https://syncstation.app/login`);
-            console.log(`📝 Register: https://syncstation.app/register`);
-            console.log(`⚙️  Settings: https://syncstation.app/settings`);
-            console.log(`👑 Admin: https://syncstation.app/admin`);
-            console.log(`👥 User Mgmt: https://syncstation.app/user-management`);
+            console.log(`🔐 Login: https://portal.syncstation.app/login`);
+            console.log(`📝 Register: https://portal.syncstation.app/register`);
+            console.log(`⚙️  Settings: https://portal.syncstation.app/settings`);
+            console.log(`👑 Admin: https://portal.syncstation.app/admin`);
+            console.log(`👥 User Mgmt: https://portal.syncstation.app/user-management`);
             console.log('================================');
             console.log('');
         });
