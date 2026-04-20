@@ -19,9 +19,9 @@ class EmailService {
             }
         });
         
-        this.fromEmail = process.env.FROM_EMAIL || 'noreply@propbridge.io';
-        this.fromName = process.env.FROM_NAME || 'PropBridge';
-        this.appUrl = process.env.APP_URL || 'https://propbridge-production.up.railway.app';
+        this.fromEmail = process.env.FROM_EMAIL || 'noreply@syncstation.app';
+        this.fromName = process.env.FROM_NAME || 'SyncStation';
+        this.appUrl = process.env.APP_URL || 'https://portal.syncstation.app';
     }
     
     /**
@@ -33,7 +33,7 @@ class EmailService {
         const mailOptions = {
             from: `"${this.fromName}" <${this.fromEmail}>`,
             to: email,
-            subject: 'Verify Your PropBridge Account',
+            subject: 'Verify Your SyncStation Account',
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -58,21 +58,21 @@ class EmailService {
                 <body>
                     <div class="container">
                         <div class="header">
-                            <h1>Welcome to PropBridge!</h1>
+                            <h1>Welcome to SyncStation!</h1>
                         </div>
                         <div class="content">
                             <p>Hi ${fullName},</p>
-                            <p>Thank you for registering with PropBridge. Please verify your email address to complete your account setup.</p>
+                            <p>Thank you for registering with SyncStation. Please verify your email address to complete your account setup.</p>
                             <p style="text-align: center;">
                                 <a href="${verificationUrl}" class="button">Verify Email Address</a>
                             </p>
                             <p>Or copy and paste this link into your browser:</p>
                             <p style="word-break: break-all; color: #2563eb;">${verificationUrl}</p>
                             <p>This link will expire in 24 hours.</p>
-                            <p>If you didn't create an account with PropBridge, please ignore this email.</p>
+                            <p>If you didn't create an account with SyncStation, please ignore this email.</p>
                         </div>
                         <div class="footer">
-                            <p>© ${new Date().getFullYear()} PropBridge. All rights reserved.</p>
+                            <p>© ${new Date().getFullYear()} SyncStation. All rights reserved.</p>
                         </div>
                     </div>
                 </body>
@@ -92,7 +92,7 @@ class EmailService {
         const mailOptions = {
             from: `"${this.fromName}" <${this.fromEmail}>`,
             to: email,
-            subject: 'Reset Your PropBridge Password',
+            subject: 'Reset Your SyncStation Password',
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -127,7 +127,7 @@ class EmailService {
                         </div>
                         <div class="content">
                             <p>Hi ${fullName},</p>
-                            <p>We received a request to reset your password for your PropBridge account.</p>
+                            <p>We received a request to reset your password for your SyncStation account.</p>
                             <p style="text-align: center;">
                                 <a href="${resetUrl}" class="button">Reset Password</a>
                             </p>
@@ -143,7 +143,7 @@ class EmailService {
                             </div>
                         </div>
                         <div class="footer">
-                            <p>© ${new Date().getFullYear()} PropBridge. All rights reserved.</p>
+                            <p>© ${new Date().getFullYear()} SyncStation. All rights reserved.</p>
                         </div>
                     </div>
                 </body>
@@ -164,7 +164,7 @@ class EmailService {
         const mailOptions = {
             from: `"${this.fromName}" <${this.fromEmail}>`,
             to: email,
-            subject: `${inviterName} invited you to join PropBridge`,
+            subject: `${inviterName} invited you to join SyncStation`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -200,7 +200,7 @@ class EmailService {
                         </div>
                         <div class="content">
                             <p>Hi ${fullName},</p>
-                            <p><strong>${inviterName}</strong> has invited you to collaborate on their HubSpot portal using PropBridge.</p>
+                            <p><strong>${inviterName}</strong> has invited you to collaborate on their HubSpot portal using SyncStation.</p>
                             
                             <h3>Your Login Credentials:</h3>
                             <div class="credentials">
@@ -225,7 +225,7 @@ class EmailService {
                             <p>After verification, login here: <a href="${loginUrl}">${loginUrl}</a></p>
                         </div>
                         <div class="footer">
-                            <p>© ${new Date().getFullYear()} PropBridge. All rights reserved.</p>
+                            <p>© ${new Date().getFullYear()} SyncStation. All rights reserved.</p>
                         </div>
                     </div>
                 </body>
@@ -245,7 +245,7 @@ class EmailService {
         const mailOptions = {
             from: `"${this.fromName}" <${this.fromEmail}>`,
             to: email,
-            subject: `${inviterName} added you to their PropBridge portal`,
+            subject: `${inviterName} added you to their SyncStation portal`,
             html: `
                 <!DOCTYPE html>
                 <html>
@@ -275,14 +275,14 @@ class EmailService {
                         <div class="content">
                             <p>Hi ${fullName},</p>
                             <p>Great news! <strong>${inviterName}</strong> has added you to their HubSpot portal with <strong>${role}</strong> access.</p>
-                            <p>You can now access this portal using your existing PropBridge account.</p>
+                            <p>You can now access this portal using your existing SyncStation account.</p>
                             <p style="text-align: center;">
                                 <a href="${loginUrl}" class="button">Login Now</a>
                             </p>
                             <p>Your new portal will appear in your portal selector after login.</p>
                         </div>
                         <div class="footer">
-                            <p>© ${new Date().getFullYear()} PropBridge. All rights reserved.</p>
+                            <p>© ${new Date().getFullYear()} SyncStation. All rights reserved.</p>
                         </div>
                     </div>
                 </body>
