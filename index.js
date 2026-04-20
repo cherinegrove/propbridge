@@ -6,13 +6,18 @@
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const session = require('express-session');
 
 // Database connection
 const pool = require('./src/services/database');
 
-// Authentication routes and middleware
+// Client authentication routes and middleware
 const authRoutes = require('./src/routes/authRoutes');
 const { requireAuth, requireRole, optionalAuth } = require('./src/middleware/requireAuth');
+
+// Admin authentication and routes
+const adminAuthRoutes = require('./src/routes/admin-auth');
+const adminRoutes = require('./src/routes/admin');
 
 // Initialize Express app
 const app = express();
@@ -29,6 +34,18 @@ app.use(express.urlencoded({ extended: true }));
 // Parse cookies
 app.use(cookieParser());
 
+// Session middleware (for admin authentication)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'syncstation-secret-change-this',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
 // Serve static files from src/public directory
 app.use(express.static('src/public'));
 
@@ -38,7 +55,13 @@ app.use((req, res, next) => {
     next();
 });
 
-// ==================== AUTHENTICATION ROUTES ====================
+// ==================== ADMIN AUTHENTICATION ROUTES ====================
+// Must come BEFORE other admin routes
+
+app.use('/admin/auth', adminAuthRoutes);
+app.use('/admin/api', adminRoutes);
+
+// ==================== CLIENT AUTHENTICATION ROUTES ====================
 
 // User authentication and management API
 app.use('/api/auth', authRoutes);
@@ -46,7 +69,7 @@ app.use('/api/users', authRoutes);
 
 // ==================== EXISTING SYNCSTATION ROUTES ====================
 
-// Settings page - Protected route (requires login)
+// Settings page - Protected route (requires client login)
 app.get('/settings', requireAuth, async (req, res) => {
     try {
         res.sendFile(path.join(__dirname, 'src', 'public', 'account.html'));
@@ -56,8 +79,9 @@ app.get('/settings', requireAuth, async (req, res) => {
     }
 });
 
-// Admin portal - Protected route (requires owner/admin role)
-app.get('/admin', requireAuth, requireRole('admin'), async (req, res) => {
+// Admin portal - Now uses admin authentication (separate from client)
+// The admin.html page handles authentication via admin-login.html
+app.get('/admin', (req, res) => {
     try {
         res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
     } catch (error) {
@@ -66,10 +90,9 @@ app.get('/admin', requireAuth, requireRole('admin'), async (req, res) => {
     }
 });
 
-// Admin portals endpoint - Protected (requires admin role)
-app.get('/admin/portals', requireAuth, requireRole('admin'), async (req, res) => {
+// Legacy admin portals endpoint (if needed)
+app.get('/admin/portals', async (req, res) => {
     try {
-        // Your existing admin portals logic
         const result = await pool.query(
             'SELECT * FROM portals ORDER BY created_at DESC'
         );
@@ -119,7 +142,7 @@ app.get('/api/account/tier', async (req, res) => {
     }
 });
 
-// ==================== AUTHENTICATION FRONTEND ROUTES ====================
+// ==================== CLIENT FRONTEND ROUTES ====================
 
 // Redirect to static HTML files (served by express.static)
 app.get('/login', (req, res) => {
@@ -249,7 +272,8 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         app: 'SyncStation',
-        version: '1.0.0'
+        version: '1.0.0',
+        domain: 'portal.syncstation.app'
     });
 });
 
@@ -311,11 +335,17 @@ async function startServer() {
             console.log('================================');
             console.log(`📡 Server: http://localhost:${PORT}`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
+            console.log('');
+            console.log('CLIENT PORTAL:');
             console.log(`🔐 Login: https://portal.syncstation.app/login`);
             console.log(`📝 Register: https://portal.syncstation.app/register`);
             console.log(`⚙️  Settings: https://portal.syncstation.app/settings`);
-            console.log(`👑 Admin: https://portal.syncstation.app/admin`);
             console.log(`👥 User Mgmt: https://portal.syncstation.app/user-management`);
+            console.log('');
+            console.log('ADMIN PORTAL:');
+            console.log(`🔧 Admin Login: https://portal.syncstation.app/admin/auth/login`);
+            console.log(`👑 Admin Dashboard: https://portal.syncstation.app/admin`);
+            console.log(`📊 Admin API: https://portal.syncstation.app/admin/api/*`);
             console.log('================================');
             console.log('');
         });
