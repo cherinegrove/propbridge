@@ -42,6 +42,7 @@ router.get('/portals', requireAdmin, async (req, res) => {
       let syncRuleCount = 0;
       let totalMappings = 0;
       let userCount = 0;
+      let hasToken = false;
 
       try {
         const r = await p.query('SELECT rules FROM sync_rules WHERE portal_id = $1', [String(portal.portal_id)]);
@@ -60,7 +61,12 @@ router.get('/portals', requireAdmin, async (req, res) => {
         userCount = parseInt(r.rows[0]?.count || 0);
       } catch (e) {}
 
-      return { ...portal, sync_rule_count: syncRuleCount, total_mappings: totalMappings, user_count: userCount };
+      try {
+        const r = await p.query('SELECT 1 FROM tokens WHERE portal_id = $1', [String(portal.portal_id)]);
+        hasToken = r.rows.length > 0;
+      } catch (e) {}
+
+      return { ...portal, sync_rule_count: syncRuleCount, total_mappings: totalMappings, user_count: userCount, has_token: hasToken };
     }));
 
     res.json({ portals: enriched });
@@ -102,15 +108,72 @@ router.get('/portals/:portalId/users', requireAdmin, async (req, res) => {
   }
 });
 
+// ── DELETE /admin/api/portals/:portalId ───────────────────────────────────────
+// Removes a portal connection entirely:
+// - tokens (HubSpot OAuth connection)
+// - sync_rules
+// - portal_tiers
+// - portal_users (if any)
+// - notifications (if any)
+router.delete('/portals/:portalId', requireAdmin, async (req, res) => {
+  const p = getPool();
+  const { portalId } = req.params;
+  const id = String(portalId);
+
+  try {
+    const deleted = {};
+
+    // 1. Remove HubSpot OAuth token
+    try {
+      const r = await p.query('DELETE FROM tokens WHERE portal_id = $1', [id]);
+      deleted.tokens = r.rowCount;
+    } catch (e) { deleted.tokens = 0; }
+
+    // 2. Remove sync rules
+    try {
+      const r = await p.query('DELETE FROM sync_rules WHERE portal_id = $1', [id]);
+      deleted.sync_rules = r.rowCount;
+    } catch (e) { deleted.sync_rules = 0; }
+
+    // 3. Remove portal tier
+    try {
+      const r = await p.query('DELETE FROM portal_tiers WHERE portal_id = $1', [id]);
+      deleted.portal_tiers = r.rowCount;
+    } catch (e) { deleted.portal_tiers = 0; }
+
+    // 4. Remove portal users
+    try {
+      const r = await p.query('DELETE FROM portal_users WHERE portal_id = $1', [id]);
+      deleted.portal_users = r.rowCount;
+    } catch (e) { deleted.portal_users = 0; }
+
+    // 5. Remove notifications
+    try {
+      const r = await p.query('DELETE FROM notifications WHERE portal_id = $1', [id]);
+      deleted.notifications = r.rowCount;
+    } catch (e) { deleted.notifications = 0; }
+
+    // 6. Remove polling sync times
+    try {
+      const r = await p.query('DELETE FROM polling_sync_times WHERE portal_id = $1', [id]);
+      deleted.polling_sync_times = r.rowCount;
+    } catch (e) { deleted.polling_sync_times = 0; }
+
+    console.log(`[Admin] Deleted portal ${id}:`, deleted);
+    res.json({ ok: true, portalId: id, deleted });
+
+  } catch (err) {
+    console.error('[Admin] Delete portal error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /admin/api/users/:userId/send-reset ──────────────────────────────────
-// Generates a password reset token and returns the reset URL.
-// Also attempts to send via email if SMTP is configured.
 router.post('/users/:userId/send-reset', requireAdmin, async (req, res) => {
   const p = getPool();
   const { userId } = req.params;
 
   try {
-    // Get user details
     const userResult = await p.query(
       'SELECT id, email, full_name FROM users WHERE id = $1',
       [parseInt(userId)]
@@ -121,42 +184,27 @@ router.post('/users/:userId/send-reset', requireAdmin, async (req, res) => {
     }
 
     const user = userResult.rows[0];
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt  = new Date(Date.now() + 60 * 60 * 1000);
 
-    // Generate reset token (1 hour expiry)
-    const resetToken  = crypto.randomBytes(32).toString('hex');
-    const expiresAt   = new Date(Date.now() + 60 * 60 * 1000);
-
-    // Store token in password_reset_tokens table
     await p.query(
-      `INSERT INTO password_reset_tokens (user_id, token, expires_at)
-       VALUES ($1, $2, $3)`,
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)',
       [user.id, resetToken, expiresAt]
     );
 
     const appUrl   = process.env.APP_URL || process.env.APP_BASE_URL || 'https://portal.syncstation.app';
     const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
 
-    // Attempt to send email if email service is available
     let emailSent = false;
     try {
       const emailService = require('../services/emailService_auth');
       await emailService.sendPasswordResetEmail(user.email, user.full_name, resetToken);
       emailSent = true;
-      console.log(`[Admin] Password reset email sent to ${user.email}`);
-    } catch (emailErr) {
-      // Email not configured — that's okay, we return the URL instead
-      console.log('[Admin] Email not sent (SMTP not configured):', emailErr.message);
+    } catch (e) {
+      console.log('[Admin] Email not sent:', e.message);
     }
 
-    res.json({
-      success: true,
-      userId: user.id,
-      email: user.email,
-      name: user.full_name,
-      resetUrl,
-      emailSent,
-      expiresAt
-    });
+    res.json({ success: true, userId: user.id, email: user.email, name: user.full_name, resetUrl, emailSent, expiresAt });
 
   } catch (err) {
     console.error('[Admin] Send reset error:', err.message);
