@@ -18,13 +18,17 @@
   .logo { font-family: 'DM Mono', monospace; font-size: 18px; display: flex; align-items: center; gap: 10px; }
   .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #ffb347); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
   .admin-badge { background: var(--accent); color: white; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .admin-name { color: var(--muted); font-size: 13px; }
+  .btn-logout { padding: 6px 14px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+  .btn-logout:hover { color: var(--text); border-color: var(--error); color: var(--error); }
 
   .tabs { display: flex; gap: 4px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
   .tab { padding: 14px 20px; cursor: pointer; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
   .tab.active { color: var(--text); border-bottom-color: var(--accent); }
   .tab:hover { color: var(--text); }
 
-  .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  .main { max-width: 1300px; margin: 0 auto; padding: 32px 24px; }
   .panel { display: none; }
   .panel.active { display: block; }
 
@@ -47,19 +51,11 @@
   .tier-business  { background: rgba(255,107,53,0.1); color: var(--accent); border: 1px solid rgba(255,107,53,0.3); }
   .tier-cancelled { background: rgba(139,139,139,0.1); color: #888; border: 1px solid rgba(139,139,139,0.3); }
   .tier-suspended { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
-  .tier-expired   { background: rgba(248,113,113,0.1); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
-
-  .notif-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
-  .notif-info    { background: rgba(96,165,250,0.1); color: #60a5fa; }
-  .notif-warning { background: rgba(251,191,36,0.15); color: var(--warning); }
-  .notif-error   { background: rgba(248,113,113,0.1); color: var(--error); }
-  .notif-success { background: rgba(74,222,128,0.1); color: var(--success); }
 
   select, input, textarea {
     background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
     color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 8px 12px; width: 100%;
   }
-  textarea { font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.6; resize: vertical; }
   select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
   .btn { padding: 8px 16px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
@@ -67,9 +63,7 @@
   .btn-primary:hover { background: #ff8555; }
   .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
   .btn-secondary:hover { color: var(--text); }
-  .btn-success { background: rgba(74,222,128,0.15); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
   .btn-sm { padding: 5px 12px; font-size: 13px; }
-  .btn-danger { background: rgba(248,113,113,0.15); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
 
   .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 24px; }
   .form-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
@@ -78,18 +72,6 @@
   .form-group { display: flex; flex-direction: column; gap: 6px; }
   .form-group.full { grid-column: 1 / -1; }
   .form-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
-
-  .email-rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
-  .email-rule-header { display: flex; align-items: center; padding: 16px 20px; gap: 14px; cursor: pointer; }
-  .email-rule-header:hover { background: var(--surface2); }
-  .rule-toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
-  .rule-toggle input { opacity: 0; width: 0; height: 0; }
-  .toggle-slider { position: absolute; inset: 0; background: var(--surface2); border-radius: 22px; border: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
-  .toggle-slider:before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--muted); border-radius: 50%; transition: 0.2s; }
-  input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
-  input:checked + .toggle-slider:before { transform: translateX(18px); background: white; }
-  .rule-body { padding: 0 20px 20px; border-top: 1px solid var(--border); display: none; }
-  .rule-body.open { display: block; padding-top: 16px; }
 
   .mono { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
   .countdown-pill { display: inline-block; padding: 2px 8px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 11px; }
@@ -101,23 +83,48 @@
   .toast.show { transform: translateY(0); opacity: 1; }
   .actions-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
 
-  .var-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .var-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); cursor: pointer; }
-  .var-chip:hover { border-color: var(--accent); }
+  .loading-state { text-align: center; padding: 60px; color: var(--muted); }
+  .spinner { border: 3px solid var(--surface2); border-top: 3px solid var(--accent); border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modal */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; overflow: auto; }
+  .modal.open { display: block; }
+  .modal-inner { background: var(--surface); max-width: 860px; margin: 50px auto; border-radius: 12px; padding: 32px; border: 1px solid var(--border); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 28px; cursor: pointer; line-height: 1; }
+  .modal-close:hover { color: var(--text); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .detail-section h3 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--muted); }
+  .detail-value { font-family: 'DM Mono', monospace; }
+
+  .notif-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+  .notif-info    { background: rgba(96,165,250,0.1); color: #60a5fa; }
+  .notif-warning { background: rgba(251,191,36,0.15); color: var(--warning); }
+  .notif-error   { background: rgba(248,113,113,0.1); color: var(--error); }
+  .notif-success { background: rgba(74,222,128,0.1); color: var(--success); }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div class="logo"><div class="logo-icon">⇄</div> SyncStation <span class="admin-badge">ADMIN</span></div>
-  <span class="mono" id="lastUpdated"></span>
+  <div class="logo">
+    <div class="logo-icon">⇄</div>
+    SyncStation
+    <span class="admin-badge">ADMIN</span>
+  </div>
+  <div class="header-right">
+    <span class="admin-name" id="adminName">—</span>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+  </div>
 </div>
 
 <div class="tabs">
   <div class="tab active" onclick="showPanel('portals', this)">Portals</div>
   <div class="tab" onclick="showPanel('messages', this)">Message Center</div>
-  <div class="tab" onclick="showPanel('emails', this)">Email Notifications</div>
-  <div class="tab" onclick="showPanel('emaillog', this)">Email Log</div>
   <div class="tab" onclick="showPanel('history', this)">Notification History</div>
 </div>
 
@@ -126,31 +133,27 @@
   <!-- PORTALS PANEL -->
   <div class="panel active" id="panel-portals">
     <div class="stats-bar">
-      <div class="stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total portals</div></div>
-      <div class="stat-card"><div class="stat-value" id="statTrial">0</div><div class="stat-label">On trial</div></div>
-      <div class="stat-card"><div class="stat-value" id="statPaid">0</div><div class="stat-label">Paid</div></div>
-      <div class="stat-card"><div class="stat-value" id="statExpired">0</div><div class="stat-label">Expired</div></div>
-      <div class="stat-card"><div class="stat-value" id="statMRR">$0</div><div class="stat-label">Est. MRR</div></div>
+      <div class="stat-card"><div class="stat-value" id="statTotal">—</div><div class="stat-label">Total portals</div></div>
+      <div class="stat-card"><div class="stat-value" id="statTrial">—</div><div class="stat-label">On trial</div></div>
+      <div class="stat-card"><div class="stat-value" id="statPaid">—</div><div class="stat-label">Paid</div></div>
+      <div class="stat-card"><div class="stat-value" id="statExpired">—</div><div class="stat-label">Expired</div></div>
+      <div class="stat-card"><div class="stat-value" id="statMRR">—</div><div class="stat-label">Est. MRR</div></div>
     </div>
     <div class="actions-row">
       <button class="btn btn-secondary btn-sm" onclick="runChecks()">▶ Run Automated Checks</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadPortals()">↻ Refresh</button>
       <span class="mono" id="checksStatus"></span>
     </div>
-    <table>
-      <thead>
-        <tr><th>Portal ID</th><th>Tier</th><th>Started</th><th>Expires</th><th>Status</th><th>Change Tier</th><th>Actions</th></tr>
-      </thead>
-      <tbody id="portalTable">
-        <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">Loading...</td></tr>
-      </tbody>
-    </table>
+    <div id="portalsContainer">
+      <div class="loading-state"><div class="spinner"></div><p>Loading portals...</p></div>
+    </div>
   </div>
 
   <!-- MESSAGES PANEL -->
   <div class="panel" id="panel-messages">
     <div class="form-card">
       <h3>📬 Send In-App Notification</h3>
-      <div class="subtitle">Send a notification to one or all portals. The message appears in their dashboard.</div>
+      <div class="subtitle">Send a notification to one or all portals.</div>
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Target</label>
@@ -202,116 +205,113 @@
     </div>
   </div>
 
-  <!-- EMAIL NOTIFICATIONS PANEL -->
-  <div class="panel" id="panel-emails">
-    <div class="form-card" style="margin-bottom:24px">
-      <h3>📧 Email Notification Rules</h3>
-      <div class="subtitle">Manage automated email notifications sent to your customers. Toggle rules on/off and customise the subject and message for each trigger.</div>
-      <div style="margin-top:12px;padding:12px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
-        <p style="font-size:13px;color:var(--muted)">Available variables you can use in subject and body:</p>
-        <div class="var-chips" style="margin-top:8px">
-          <span class="var-chip" onclick="copyVar('{{portalId}}')">{{portalId}}</span>
-          <span class="var-chip" onclick="copyVar('{{planName}}')">{{planName}}</span>
-          <span class="var-chip" onclick="copyVar('{{planPrice}}')">{{planPrice}}</span>
-          <span class="var-chip" onclick="copyVar('{{maxRules}}')">{{maxRules}}</span>
-          <span class="var-chip" onclick="copyVar('{{maxMappings}}')">{{maxMappings}}</span>
-          <span class="var-chip" onclick="copyVar('{{daysLeft}}')">{{daysLeft}}</span>
-          <span class="var-chip" onclick="copyVar('{{fromTier}}')">{{fromTier}}</span>
-          <span class="var-chip" onclick="copyVar('{{toTier}}')">{{toTier}}</span>
-          <span class="var-chip" onclick="copyVar('{{settingsUrl}}')">{{settingsUrl}}</span>
-          <span class="var-chip" onclick="copyVar('{{accountUrl}}')">{{accountUrl}}</span>
-        </div>
-      </div>
-    </div>
-    <div id="emailRulesList">
-      <div style="text-align:center;color:var(--muted);padding:40px">Loading email rules...</div>
-    </div>
-  </div>
-
-  <!-- EMAIL LOG PANEL -->
-  <div class="panel" id="panel-emaillog">
-    <div class="actions-row">
-      <button class="btn btn-secondary btn-sm" onclick="loadEmailLog()">↻ Refresh</button>
-    </div>
-    <table>
-      <thead>
-        <tr><th>Portal</th><th>Rule</th><th>Sent To</th><th>Subject</th><th>Status</th><th>Sent At</th></tr>
-      </thead>
-      <tbody id="emailLogTable">
-        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>
-
   <!-- NOTIFICATION HISTORY PANEL -->
   <div class="panel" id="panel-history">
     <div class="actions-row">
       <button class="btn btn-secondary btn-sm" onclick="loadHistory()">↻ Refresh</button>
     </div>
-    <table>
-      <thead>
-        <tr><th>Portal</th><th>Type</th><th>Title</th><th>Message</th><th>Status</th><th>Sent</th></tr>
-      </thead>
-      <tbody id="historyTable">
-        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">Loading...</td></tr>
-      </tbody>
-    </table>
+    <div id="historyContainer">
+      <div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>
+    </div>
   </div>
 
+</div>
+
+<!-- Portal Detail Modal -->
+<div class="modal" id="portalModal">
+  <div class="modal-inner">
+    <div class="modal-header">
+      <h2 id="modalTitle" style="font-size:18px;">Portal Details</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-  const TIER_PRICES = { trial: 0, starter: 10, pro: 15, business: 40, cancelled: 0, suspended: 0, free: 0 };
-  const adminKey    = new URLSearchParams(window.location.search).get('key') || '';
+const TIER_PRICES = { trial: 0, starter: 10, pro: 15, business: 40, cancelled: 0, suspended: 0, free: 0 };
 
-  function showPanel(name, el) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-    el.classList.add('active');
-    if (name === 'history') loadHistory();
-    if (name === 'emails') loadEmailRules();
-    if (name === 'emaillog') loadEmailLog();
+// ── AUTH CHECK ────────────────────────────────────────────────────────────────
+
+async function checkAuth() {
+  try {
+    const res = await fetch('/admin/auth/me', { credentials: 'include' });
+    if (!res.ok) {
+      window.location.href = '/admin/auth/login';
+      return false;
+    }
+    const data = await res.json();
+    document.getElementById('adminName').textContent = data.username || data.email || 'Admin';
+    return true;
+  } catch (err) {
+    window.location.href = '/admin/auth/login';
+    return false;
   }
+}
 
-  function toggleSpecificPortal() {
-    document.getElementById('specificPortalGroup').style.display =
-      document.getElementById('msgTarget').value === 'specific' ? 'flex' : 'none';
-  }
+async function logout() {
+  try {
+    await fetch('/admin/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch (e) {}
+  window.location.href = '/admin/auth/login';
+}
 
-  async function apiFetch(url, options = {}) {
-    const sep = url.includes('?') ? '&' : '?';
-    return fetch(url + (adminKey ? sep + 'key=' + adminKey : ''), options);
-  }
+// ── PANELS ────────────────────────────────────────────────────────────────────
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  }
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'history') loadHistory();
+}
 
-  function getTrialCountdown(trialStartedAt, tier) {
-    if (tier !== 'trial') return null;
-    const expiry   = new Date(trialStartedAt).getTime() + (14 * 86400000);
-    const daysLeft = Math.ceil((expiry - Date.now()) / 86400000);
-    return { daysLeft, expiry, isExpired: daysLeft <= 0 };
-  }
+function toggleSpecificPortal() {
+  document.getElementById('specificPortalGroup').style.display =
+    document.getElementById('msgTarget').value === 'specific' ? 'flex' : 'none';
+}
 
-  // ── PORTALS ──────────────────────────────────────────────
+// ── PORTALS ───────────────────────────────────────────────────────────────────
 
-  async function loadPortals() {
-    const res     = await apiFetch('/admin/portals');
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function getTrialCountdown(createdAt, tier) {
+  if (tier !== 'trial') return null;
+  const expiry   = new Date(createdAt).getTime() + (14 * 86400000);
+  const daysLeft = Math.ceil((expiry - Date.now()) / 86400000);
+  return { daysLeft, expiry, isExpired: daysLeft <= 0 };
+}
+
+async function loadPortals() {
+  document.getElementById('portalsContainer').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><p>Loading portals...</p></div>';
+
+  try {
+    // NOTE: Admin routes are mounted at /admin/api
+    const res  = await fetch('/admin/api/portals', { credentials: 'include' });
+
+    if (res.status === 401) {
+      window.location.href = '/admin/auth/login';
+      return;
+    }
+
     const data    = await res.json();
     const portals = data.portals || [];
-    let trial = 0, paid = 0, expired = 0, mrr = 0;
 
+    let trial = 0, paid = 0, expired = 0, mrr = 0;
     portals.forEach(p => {
-      if (p.tier === 'trial') {
-        const c = getTrialCountdown(p.created_at, p.tier);
+      const tier = (p.tier || 'trial').toLowerCase();
+      if (tier === 'trial') {
+        const c = getTrialCountdown(p.created_at, 'trial');
         if (c?.isExpired) expired++; else trial++;
-      } else if (!['cancelled','suspended'].includes(p.tier)) {
-        paid++; mrr += TIER_PRICES[p.tier] || 0;
+      } else if (!['cancelled','suspended'].includes(tier)) {
+        paid++;
+        mrr += TIER_PRICES[tier] || 0;
       }
     });
 
@@ -320,26 +320,26 @@
     document.getElementById('statPaid').textContent    = paid;
     document.getElementById('statExpired').textContent = expired;
     document.getElementById('statMRR').textContent     = '$' + mrr;
-    document.getElementById('lastUpdated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
-    const tbody = document.getElementById('portalTable');
     if (!portals.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:40px">No portals yet</td></tr>';
+      document.getElementById('portalsContainer').innerHTML =
+        '<div class="loading-state"><p>No portals found yet</p></div>';
       return;
     }
 
-    tbody.innerHTML = portals.map(p => {
-      const c         = getTrialCountdown(p.created_at, p.tier);
+    const tbody = portals.map(p => {
+      const tier      = (p.tier || 'trial').toLowerCase();
+      const c         = getTrialCountdown(p.created_at, tier);
       const isExpired = c?.isExpired;
-      const tierClass = isExpired ? 'expired' : p.tier;
-      const tierLabel = isExpired ? 'Trial Expired' : p.tier.charAt(0).toUpperCase() + p.tier.slice(1);
-      const expiry    = p.tier === 'trial' ? formatDate(new Date(c?.expiry)) : '—';
-      let statusHtml  = '—';
+      const tierClass = isExpired ? 'expired' : tier;
+      const tierLabel = isExpired ? 'Trial Expired' : tier.charAt(0).toUpperCase() + tier.slice(1);
+      const expiry    = tier === 'trial' ? formatDate(new Date(c?.expiry)) : '—';
 
-      if (p.tier === 'trial' && c) {
+      let statusHtml = '—';
+      if (tier === 'trial' && c) {
         const cls = c.isExpired ? 'danger' : c.daysLeft <= 3 ? 'danger' : c.daysLeft <= 7 ? 'warning' : 'ok';
         statusHtml = `<span class="countdown-pill countdown-${cls}">${c.isExpired ? 'Expired' : c.daysLeft + 'd left'}</span>`;
-      } else if (!['trial','cancelled','suspended'].includes(p.tier)) {
+      } else if (!['trial','cancelled','suspended'].includes(tier)) {
         statusHtml = `<span class="countdown-pill countdown-ok">Active</span>`;
       }
 
@@ -354,13 +354,13 @@
         <td>${statusHtml}</td>
         <td>
           <select id="tier-${p.portal_id}" style="width:155px">
-            <option value="free"      ${p.tier==='free'?'selected':''}>Free</option>
-            <option value="trial"     ${p.tier==='trial'?'selected':''}>Trial</option>
-            <option value="starter"   ${p.tier==='starter'?'selected':''}>Starter ($10)</option>
-            <option value="pro"       ${p.tier==='pro'?'selected':''}>Pro ($15)</option>
-            <option value="business"  ${p.tier==='business'?'selected':''}>Business ($40)</option>
-            <option value="suspended" ${p.tier==='suspended'?'selected':''}>🚫 Suspended</option>
-            <option value="cancelled" ${p.tier==='cancelled'?'selected':''}>❌ Cancelled</option>
+            <option value="free"      ${tier==='free'?'selected':''}>Free</option>
+            <option value="trial"     ${tier==='trial'?'selected':''}>Trial</option>
+            <option value="starter"   ${tier==='starter'?'selected':''}>Starter ($10)</option>
+            <option value="pro"       ${tier==='pro'?'selected':''}>Pro ($15)</option>
+            <option value="business"  ${tier==='business'?'selected':''}>Business ($40)</option>
+            <option value="suspended" ${tier==='suspended'?'selected':''}>🚫 Suspended</option>
+            <option value="cancelled" ${tier==='cancelled'?'selected':''}>❌ Cancelled</option>
           </select>
         </td>
         <td style="display:flex;gap:6px;flex-wrap:wrap">
@@ -369,212 +369,119 @@
         </td>
       </tr>`;
     }).join('');
-  }
 
-  async function saveTier(portalId) {
-    const tier = document.getElementById('tier-' + portalId).value;
-    try {
-      const res = await apiFetch('/admin/portals/' + portalId + '/tier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier })
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('Tier update failed:', res.status, errorData);
-        showToast('✗ Failed to update tier: ' + (errorData.error || res.statusText));
-        return;
-      }
-      
-      const data = await res.json();
-      console.log('Tier update success:', data);
-      showToast('✓ Tier updated to ' + tier);
-      loadPortals();
-    } catch (err) {
-      console.error('Tier update error:', err);
-      showToast('✗ Error updating tier: ' + err.message);
+    document.getElementById('portalsContainer').innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Portal ID</th><th>Tier</th><th>Started</th><th>Expires</th><th>Status</th><th>Change Tier</th><th>Actions</th></tr>
+        </thead>
+        <tbody>${tbody}</tbody>
+      </table>`;
+
+  } catch (err) {
+    console.error('Load portals error:', err);
+    document.getElementById('portalsContainer').innerHTML =
+      '<div class="loading-state"><p style="color:var(--error)">Failed to load portals. Check console.</p></div>';
+  }
+}
+
+async function saveTier(portalId) {
+  const tier = document.getElementById('tier-' + portalId).value;
+  try {
+    // NOTE: correct endpoint is /admin/api/portals/:id/tier
+    const res = await fetch(`/admin/api/portals/${portalId}/tier`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast('✗ ' + (err.error || 'Failed to update'));
+      return;
     }
+    showToast('✓ Tier updated to ' + tier);
+    loadPortals();
+  } catch (err) {
+    showToast('✗ Error: ' + err.message);
   }
+}
 
-  function msgPortal(portalId) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.getElementById('panel-messages').classList.add('active');
-    document.querySelectorAll('.tab')[1].classList.add('active');
-    document.getElementById('msgTarget').value = 'specific';
-    document.getElementById('specificPortalGroup').style.display = 'flex';
-    document.getElementById('msgPortalId').value = portalId;
-  }
+function msgPortal(portalId) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-messages').classList.add('active');
+  document.querySelectorAll('.tab')[1].classList.add('active');
+  document.getElementById('msgTarget').value = 'specific';
+  document.getElementById('specificPortalGroup').style.display = 'flex';
+  document.getElementById('msgPortalId').value = portalId;
+}
 
-  // ── MESSAGES ─────────────────────────────────────────────
+// ── MESSAGES ──────────────────────────────────────────────────────────────────
 
-  async function sendMessage() {
-    const target      = document.getElementById('msgTarget').value;
-    const type        = document.getElementById('msgType').value;
-    const title       = document.getElementById('msgTitle').value.trim();
-    const message     = document.getElementById('msgBody').value.trim();
-    const actionLabel = document.getElementById('msgActionLabel').value.trim();
-    const actionUrl   = document.getElementById('msgActionUrl').value.trim();
-    if (!title || !message) { showToast('Please fill in title and message'); return; }
-    const body = { type, title, message, actionLabel, actionUrl };
-    if (target === 'specific') body.portalId = document.getElementById('msgPortalId').value.trim();
-    else body.all = true;
-    const res  = await apiFetch('/admin/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function sendMessage() {
+  const target      = document.getElementById('msgTarget').value;
+  const type        = document.getElementById('msgType').value;
+  const title       = document.getElementById('msgTitle').value.trim();
+  const message     = document.getElementById('msgBody').value.trim();
+  const actionLabel = document.getElementById('msgActionLabel').value.trim();
+  const actionUrl   = document.getElementById('msgActionUrl').value.trim();
+
+  if (!title || !message) { showToast('Please fill in title and message'); return; }
+
+  const body = { type, title, message, actionLabel, actionUrl };
+  if (target === 'specific') body.portalId = document.getElementById('msgPortalId').value.trim();
+  else body.all = true;
+
+  try {
+    // NOTE: correct endpoint is /admin/api/notify
+    const res  = await fetch('/admin/api/notify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
     const data = await res.json();
     document.getElementById('msgStatus').textContent = `✓ Sent to ${data.sent} portal(s)`;
     showToast('✓ Notification sent!');
     document.getElementById('msgTitle').value = '';
     document.getElementById('msgBody').value  = '';
+  } catch (err) {
+    showToast('✗ Error: ' + err.message);
   }
+}
 
-  function quickMsg(type) {
-    const msgs = {
-      trial_expiring: { title: 'Your free trial is ending soon', message: 'Upgrade now to keep your sync rules active.', type: 'warning', actionLabel: 'View Plans', actionUrl: '/account' },
-      usage_90: { title: "You've used 90% of your sync rules", message: 'Upgrade to add more rules.', type: 'warning', actionLabel: 'Upgrade', actionUrl: '/account' },
-      new_feature: { title: '🎉 New Feature Available', message: 'We\'ve added new functionality to SyncStation!', type: 'info' },
-      maintenance: { title: '🔧 Scheduled Maintenance', message: 'SyncStation will be briefly unavailable for maintenance.', type: 'warning' }
-    };
-    const m = msgs[type];
-    document.getElementById('msgTitle').value = m.title;
-    document.getElementById('msgBody').value  = m.message;
-    document.getElementById('msgType').value  = m.type;
-  }
+function quickMsg(type) {
+  const msgs = {
+    trial_expiring: { title: 'Your free trial is ending soon', message: 'Upgrade now to keep your sync rules active.', type: 'warning', actionLabel: 'View Plans', actionUrl: '/account' },
+    usage_90:       { title: "You've used 90% of your sync rules", message: 'Upgrade to add more rules.', type: 'warning', actionLabel: 'Upgrade', actionUrl: '/account' },
+    new_feature:    { title: '🎉 New Feature Available', message: "We've added new functionality to SyncStation!", type: 'info' },
+    maintenance:    { title: '🔧 Scheduled Maintenance', message: 'SyncStation will be briefly unavailable for maintenance.', type: 'warning' }
+  };
+  const m = msgs[type];
+  document.getElementById('msgTitle').value = m.title;
+  document.getElementById('msgBody').value  = m.message;
+  document.getElementById('msgType').value  = m.type;
+}
 
-  // ── EMAIL RULES ───────────────────────────────────────────
+// ── NOTIFICATION HISTORY ──────────────────────────────────────────────────────
 
-  async function loadEmailRules() {
-    const res   = await apiFetch('/admin/email-rules');
-    const data  = await res.json();
-    const rules = data.rules || [];
-    const container = document.getElementById('emailRulesList');
-
-    if (!rules.length) {
-      container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px">No email rules found</div>';
-      return;
-    }
-
-    container.innerHTML = rules.map(rule => `
-      <div class="email-rule-card" id="rule-card-${rule.id}">
-        <div class="email-rule-header" onclick="toggleRuleBody('${rule.id}')">
-          <label class="rule-toggle" onclick="event.stopPropagation()">
-            <input type="checkbox" ${rule.enabled ? 'checked' : ''} onchange="toggleRule('${rule.id}', this.checked)">
-            <span class="toggle-slider"></span>
-          </label>
-          <div style="flex:1">
-            <div style="font-weight:500;margin-bottom:2px">${escHtml(rule.name)}</div>
-            <div class="mono" style="font-size:11px">${rule.id}</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();testEmail('${rule.id}')">Test</button>
-            <span style="color:var(--muted);font-size:18px">›</span>
-          </div>
-        </div>
-        <div class="rule-body" id="rule-body-${rule.id}">
-          <div class="form-group" style="margin-bottom:12px">
-            <label class="form-label">Subject Line</label>
-            <input type="text" id="subject-${rule.id}" value="${escHtml(rule.subject)}">
-          </div>
-          <div class="form-group" style="margin-bottom:16px">
-            <label class="form-label">Email Body</label>
-            <textarea id="body-${rule.id}" rows="8">${escHtml(rule.body)}</textarea>
-          </div>
-          <div style="display:flex;gap:10px">
-            <button class="btn btn-primary btn-sm" onclick="saveRule('${rule.id}', '${escHtml(rule.name)}')">Save Changes</button>
-            <button class="btn btn-secondary btn-sm" onclick="resetRule('${rule.id}')">Reset to Default</button>
-          </div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  function toggleRuleBody(id) {
-    const body = document.getElementById('rule-body-' + id);
-    body.classList.toggle('open');
-  }
-
-  async function toggleRule(id, enabled) {
-    const subjectEl = document.getElementById('subject-' + id);
-    const bodyEl    = document.getElementById('body-' + id);
-    const subject   = subjectEl ? subjectEl.value : '';
-    const body      = bodyEl ? bodyEl.value : '';
-    await apiFetch('/admin/email-rules/' + id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled, subject, body })
-    });
-    showToast(enabled ? '✓ Email rule enabled' : 'Email rule disabled');
-  }
-
-  async function saveRule(id, name) {
-    const subject = document.getElementById('subject-' + id).value.trim();
-    const body    = document.getElementById('body-' + id).value.trim();
-    const enabled = document.querySelector(`#rule-card-${id} input[type=checkbox]`).checked;
-    await apiFetch('/admin/email-rules/' + id, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, body, enabled, name })
-    });
-    showToast('✓ Email rule saved');
-  }
-
-  async function testEmail(id) {
-    const email = prompt('Send test email to:');
-    if (!email) return;
-    const res  = await apiFetch('/admin/email-rules/' + id + '/test', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-    showToast(data.ok ? '✓ Test email sent!' : '✗ Failed: ' + data.error);
-  }
-
-  async function resetRule(id) {
-    if (!confirm('Reset this rule to default content?')) return;
-    await apiFetch('/admin/email-rules/' + id + '/reset', { method: 'POST' });
-    showToast('✓ Rule reset to default');
-    loadEmailRules();
-  }
-
-  function copyVar(text) {
-    navigator.clipboard.writeText(text);
-    showToast('Copied ' + text);
-  }
-
-  // ── EMAIL LOG ─────────────────────────────────────────────
-
-  async function loadEmailLog() {
-    const res  = await apiFetch('/admin/email-log');
-    const data = await res.json();
-    const logs = data.logs || [];
-    const tbody = document.getElementById('emailLogTable');
-    if (!logs.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No emails sent yet</td></tr>';
-      return;
-    }
-    tbody.innerHTML = logs.map(l => `<tr>
-      <td><span class="mono">${l.portal_id || '—'}</span></td>
-      <td><span class="mono">${l.rule_id || '—'}</span></td>
-      <td><span class="mono">${l.to_email || '—'}</span></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.subject}</td>
-      <td><span class="notif-badge ${l.status === 'sent' ? 'notif-success' : 'notif-error'}">${l.status}</span></td>
-      <td><span class="mono">${new Date(l.created_at).toLocaleString()}</span></td>
-    </tr>`).join('');
-  }
-
-  // ── NOTIFICATION HISTORY ──────────────────────────────────
-
-  async function loadHistory() {
-    const res  = await apiFetch('/admin/notifications');
+async function loadHistory() {
+  document.getElementById('historyContainer').innerHTML =
+    '<div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>';
+  try {
+    // NOTE: correct endpoint is /admin/api/notifications
+    const res  = await fetch('/admin/api/notifications', { credentials: 'include' });
     const data = await res.json();
     const notifications = data.notifications || [];
-    const tbody = document.getElementById('historyTable');
+
     if (!notifications.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px">No notifications yet</td></tr>';
+      document.getElementById('historyContainer').innerHTML =
+        '<div class="loading-state"><p>No notifications yet</p></div>';
       return;
     }
-    tbody.innerHTML = notifications.map(n => `<tr>
+
+    const rows = notifications.map(n => `<tr>
       <td><span class="mono">${n.portal_id}</span></td>
       <td><span class="notif-badge notif-${n.type}">${n.type}</span></td>
       <td>${n.title}</td>
@@ -582,31 +489,59 @@
       <td><span class="mono">${n.status}</span></td>
       <td><span class="mono">${new Date(n.created_at).toLocaleString()}</span></td>
     </tr>`).join('');
+
+    document.getElementById('historyContainer').innerHTML = `
+      <table>
+        <thead><tr><th>Portal</th><th>Type</th><th>Title</th><th>Message</th><th>Status</th><th>Sent</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch (err) {
+    document.getElementById('historyContainer').innerHTML =
+      '<div class="loading-state"><p style="color:var(--error)">Failed to load history</p></div>';
   }
+}
 
-  // ── UTILITIES ─────────────────────────────────────────────
+// ── MODAL ─────────────────────────────────────────────────────────────────────
 
-  async function runChecks() {
-    document.getElementById('checksStatus').textContent = 'Running...';
-    await apiFetch('/admin/run-checks', { method: 'POST' });
+function closeModal() {
+  document.getElementById('portalModal').classList.remove('open');
+}
+
+document.getElementById('portalModal').addEventListener('click', e => {
+  if (e.target.id === 'portalModal') closeModal();
+});
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+
+async function runChecks() {
+  document.getElementById('checksStatus').textContent = 'Running...';
+  try {
+    // NOTE: correct endpoint is /admin/api/run-checks
+    await fetch('/admin/api/run-checks', { method: 'POST', credentials: 'include' });
     document.getElementById('checksStatus').textContent = '✓ Done';
     showToast('✓ Automated checks complete');
     loadPortals();
+  } catch (err) {
+    document.getElementById('checksStatus').textContent = '✗ Failed';
   }
+}
 
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3000);
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+(async () => {
+  const authed = await checkAuth();
+  if (authed) {
+    loadPortals();
+    setInterval(loadPortals, 60000);
   }
-
-  function escHtml(str) {
-    return String(str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  loadPortals();
-  setInterval(loadPortals, 30000);
+})();
 </script>
 </body>
 </html>
