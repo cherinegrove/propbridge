@@ -1,6 +1,5 @@
 // =====================================================
 // SYNCSTATION MAIN SERVER
-// HubSpot Property Sync Platform with User Authentication
 // =====================================================
 
 const express = require('express');
@@ -8,37 +7,24 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
-// Database connection
 const pool = require('./src/services/database');
-
-// Client authentication routes and middleware
 const authRoutes = require('./src/routes/authRoutes');
-const { requireAuth, requireRole, optionalAuth } = require('./src/middleware/requireAuth');
-
-// Admin authentication and routes
+const { requireAuth } = require('./src/middleware/requireAuth');
 const adminAuthRoutes = require('./src/routes/admin-auth');
 const adminRoutes = require('./src/routes/admin');
 
-// Initialize Express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ==================== TRUST PROXY (Required for Railway) ====================
-// Must be set BEFORE session middleware so secure cookies work behind Railway's proxy
+// Required for Railway reverse proxy — must be before session
 app.set('trust proxy', 1);
 
-// ==================== MIDDLEWARE ====================
+// ── MIDDLEWARE ────────────────────────────────────────────────────────────────
 
-// Parse JSON bodies
 app.use(express.json());
-
-// Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
-
-// Parse cookies
 app.use(cookieParser());
 
-// Session middleware (for admin authentication)
 app.use(session({
     secret: process.env.SESSION_SECRET || 'syncstation-secret-change-this',
     resave: false,
@@ -47,322 +33,160 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
-// Serve static files from src/public directory
 app.use(express.static('src/public'));
 
-// Request logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
 });
 
-// ==================== ADMIN AUTHENTICATION ROUTES ====================
-// Must come BEFORE other admin routes
+// ── ADMIN ROUTES ──────────────────────────────────────────────────────────────
 
 app.use('/admin/auth', adminAuthRoutes);
 app.use('/admin/api', adminRoutes);
 
-// ==================== CLIENT AUTHENTICATION ROUTES ====================
+// ── CLIENT AUTH ROUTES ────────────────────────────────────────────────────────
 
-// User authentication and management API
 app.use('/api/auth', authRoutes);
 app.use('/api/users', authRoutes);
 
-// ==================== EXISTING SYNCSTATION ROUTES ====================
+// ── PAGE ROUTES ───────────────────────────────────────────────────────────────
 
-// Settings page - Protected route (requires client login)
-app.get('/settings', requireAuth, async (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, 'src', 'public', 'account.html'));
-    } catch (error) {
-        console.error('Settings error:', error);
-        res.status(500).send('Error loading settings');
-    }
+// FIX: was incorrectly serving account.html — must serve settings.html
+app.get('/settings', requireAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'src', 'public', 'settings.html'));
 });
 
-// Admin portal - admin.html handles auth check via /admin/auth/me
+// Account/billing page
+app.get('/account', requireAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, 'src', 'public', 'account.html'));
+});
+
+// Admin dashboard — auth handled client-side via /admin/auth/me
 app.get('/admin', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
-    } catch (error) {
-        console.error('Admin error:', error);
-        res.status(500).send('Error loading admin');
-    }
+    res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
 });
 
-// Legacy admin portals endpoint (if needed)
-app.get('/admin/portals', async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM portals ORDER BY created_at DESC'
-        );
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Admin portals error:', error);
-        res.status(500).json({ error: 'Failed to fetch portals' });
-    }
+// Client-facing redirects
+app.get('/login',           (req, res) => res.redirect('/login.html'));
+app.get('/register',        (req, res) => res.redirect('/register.html'));
+app.get('/forgot-password', (req, res) => res.redirect('/forgot-password.html'));
+app.get('/reset-password',  (req, res) => res.redirect('/reset-password.html'));
+app.get('/user-management', (req, res) => res.redirect('/user-management.html'));
+
+// Email verification
+app.get('/verify-email', (req, res) => {
+    const token = req.query.token;
+    if (!token) return res.status(400).send('Verification token is required');
+
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Verification - SyncStation</title>
+    <style>
+        body { font-family: sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; margin:0; background:linear-gradient(135deg,#667eea,#764ba2); }
+        .box { background:white; padding:40px; border-radius:12px; text-align:center; max-width:400px; }
+        h1 { color:#2563eb; }
+        .spinner { border:4px solid #f3f3f3; border-top:4px solid #2563eb; border-radius:50%; width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        a { display:inline-block; margin-top:20px; padding:12px 30px; background:#2563eb; color:white; text-decoration:none; border-radius:8px; font-weight:600; }
+        p { color:#6b7280; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>SyncStation</h1>
+        <div class="spinner"></div>
+        <p>Verifying your email...</p>
+    </div>
+    <script>
+        fetch('/api/auth/verify-email/${token}')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector('.box').innerHTML =
+                        '<div style="font-size:64px;color:#10b981">✅</div>' +
+                        '<h1>Email Verified!</h1>' +
+                        '<p>Your email has been verified. You can now log in.</p>' +
+                        '<a href="/login">Go to Login</a>';
+                } else {
+                    throw new Error(data.error || 'Verification failed');
+                }
+            })
+            .catch(err => {
+                document.querySelector('.box').innerHTML =
+                    '<div style="font-size:64px;color:#ef4444">❌</div>' +
+                    '<h1>Verification Failed</h1>' +
+                    '<p>' + err.message + '</p>' +
+                    '<a href="/login">Go to Login</a>';
+            });
+    </script>
+</body>
+</html>`);
 });
 
-// Webhooks endpoint
-app.post('/webhooks/receive', async (req, res) => {
-    try {
-        console.log('Webhook received:', req.body);
-        res.status(200).send('OK');
-    } catch (error) {
-        console.error('Webhook error:', error);
-        res.status(500).send('Error processing webhook');
-    }
+// ── EXISTING SYNCSTATION API ROUTES ──────────────────────────────────────────
+
+app.post('/webhooks/receive', (req, res) => {
+    console.log('Webhook received:', req.body);
+    res.status(200).send('OK');
 });
 
-// Account tier API
 app.get('/api/account/tier', async (req, res) => {
     try {
         const portalId = req.query.portal_id;
-        
-        if (!portalId) {
-            return res.status(400).json({ error: 'portal_id is required' });
-        }
-        
-        const result = await pool.query(
-            'SELECT tier FROM portals WHERE portal_id = $1',
-            [portalId]
-        );
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Portal not found' });
-        }
-        
+        if (!portalId) return res.status(400).json({ error: 'portal_id is required' });
+        const result = await pool.query('SELECT tier FROM portals WHERE portal_id = $1', [portalId]);
+        if (!result.rows.length) return res.status(404).json({ error: 'Portal not found' });
         res.json({ tier: result.rows[0].tier });
-        
-    } catch (error) {
-        console.error('Tier API error:', error);
+    } catch (err) {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// ==================== CLIENT FRONTEND ROUTES ====================
-
-app.get('/login', (req, res) => {
-    res.redirect('/login.html');
-});
-
-app.get('/register', (req, res) => {
-    res.redirect('/register.html');
-});
-
-app.get('/forgot-password', (req, res) => {
-    res.redirect('/forgot-password.html');
-});
-
-app.get('/reset-password', (req, res) => {
-    res.redirect('/reset-password.html');
-});
-
-app.get('/user-management', (req, res) => {
-    res.redirect('/user-management.html');
-});
-
-// Email verification endpoint
-app.get('/verify-email', (req, res) => {
-    const token = req.query.token;
-    
-    if (!token) {
-        return res.status(400).send('Verification token is required');
-    }
-    
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Email Verification - SyncStation</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body {
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 100vh;
-                    margin: 0;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                }
-                .container {
-                    background: white;
-                    padding: 40px;
-                    border-radius: 12px;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    text-align: center;
-                    max-width: 400px;
-                }
-                h1 { color: #2563eb; margin-bottom: 20px; }
-                .spinner { 
-                    border: 4px solid #f3f3f3;
-                    border-top: 4px solid #2563eb;
-                    border-radius: 50%;
-                    width: 40px;
-                    height: 40px;
-                    animation: spin 1s linear infinite;
-                    margin: 20px auto;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                .success { color: #10b981; font-size: 64px; margin-bottom: 20px; }
-                .error { color: #ef4444; font-size: 64px; margin-bottom: 20px; }
-                a {
-                    display: inline-block;
-                    margin-top: 20px;
-                    padding: 12px 30px;
-                    background: #2563eb;
-                    color: white;
-                    text-decoration: none;
-                    border-radius: 8px;
-                    font-weight: 600;
-                }
-                p { color: #6b7280; line-height: 1.6; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>SyncStation</h1>
-                <div class="spinner"></div>
-                <p>Verifying your email...</p>
-            </div>
-            <script>
-                fetch('/api/auth/verify-email/${token}')
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.querySelector('.container').innerHTML = 
-                                '<div class="success">✅</div>' +
-                                '<h1>Email Verified!</h1>' +
-                                '<p>Your email has been verified successfully. You can now login to your account.</p>' +
-                                '<a href="/login">Go to Login</a>';
-                        } else {
-                            throw new Error(data.error || 'Verification failed');
-                        }
-                    })
-                    .catch(error => {
-                        document.querySelector('.container').innerHTML = 
-                            '<div class="error">❌</div>' +
-                            '<h1>Verification Failed</h1>' +
-                            '<p>' + error.message + '</p>' +
-                            '<p>The verification link may have expired or already been used.</p>' +
-                            '<a href="/login">Go to Login</a>';
-                    });
-            </script>
-        </body>
-        </html>
-    `);
-});
-
-// ==================== HEALTH CHECK ====================
+// ── HEALTH & ROOT ─────────────────────────────────────────────────────────────
 
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        app: 'SyncStation',
-        version: '1.0.0',
-        domain: 'portal.syncstation.app'
-    });
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), app: 'SyncStation' });
 });
 
-// ==================== ROOT REDIRECT ====================
+app.get('/', (req, res) => res.redirect('/login'));
 
-app.get('/', (req, res) => {
-    res.redirect('/login');
-});
+// ── ERROR HANDLING ────────────────────────────────────────────────────────────
 
-// ==================== ERROR HANDLING ====================
-
-// 404 handler
 app.use((req, res) => {
-    res.status(404).json({ 
-        error: 'Not Found',
-        path: req.path,
-        message: 'The requested resource does not exist'
-    });
+    res.status(404).json({ error: 'Not Found', path: req.path });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
     console.error('Error:', err);
-    
-    res.status(err.status || 500).json({
-        error: err.message || 'Internal Server Error',
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    });
+    res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' });
 });
 
-// ==================== DATABASE CONNECTION TEST ====================
-
-async function testDatabaseConnection() {
-    try {
-        const result = await pool.query('SELECT NOW()');
-        console.log('✅ Database connected:', result.rows[0].now);
-        return true;
-    } catch (error) {
-        console.error('❌ Database connection error:', error);
-        return false;
-    }
-}
-
-// ==================== START SERVER ====================
+// ── START ─────────────────────────────────────────────────────────────────────
 
 async function startServer() {
     try {
-        const dbConnected = await testDatabaseConnection();
-        
-        if (!dbConnected) {
-            console.error('⚠️  Starting server without database connection');
-        }
-        
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log('');
-            console.log('🚀 SyncStation Server Started!');
-            console.log('================================');
-            console.log(`📡 Server: http://localhost:${PORT}`);
-            console.log(`🌍 Environment: ${process.env.NODE_ENV || 'production'}`);
-            console.log('');
-            console.log('CLIENT PORTAL:');
-            console.log(`🔐 Login: https://portal.syncstation.app/login`);
-            console.log(`📝 Register: https://portal.syncstation.app/register`);
-            console.log(`⚙️  Settings: https://portal.syncstation.app/settings`);
-            console.log(`👥 User Mgmt: https://portal.syncstation.app/user-management`);
-            console.log('');
-            console.log('ADMIN PORTAL:');
-            console.log(`🔧 Admin Login: https://portal.syncstation.app/admin/auth/login`);
-            console.log(`👑 Admin Dashboard: https://portal.syncstation.app/admin`);
-            console.log(`📊 Admin API: https://portal.syncstation.app/admin/api/*`);
-            console.log('================================');
-            console.log('');
-        });
-        
-    } catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
+        const result = await pool.query('SELECT NOW()');
+        console.log('✅ Database connected:', result.rows[0].now);
+    } catch (err) {
+        console.error('⚠️  Database connection error:', err.message);
     }
+
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`\n🚀 SyncStation running on port ${PORT}`);
+        console.log(`🔐 Login:       https://portal.syncstation.app/login`);
+        console.log(`⚙️  Settings:    https://portal.syncstation.app/settings`);
+        console.log(`🔧 Admin Login: https://portal.syncstation.app/admin/auth/login\n`);
+    });
 }
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, closing server...');
-    process.exit(0);
-});
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT',  () => process.exit(0));
 
-process.on('SIGINT', () => {
-    console.log('SIGINT received, closing server...');
-    process.exit(0);
-});
-
-// Start the server
 startServer();
-
 module.exports = app;
