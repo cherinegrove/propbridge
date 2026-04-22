@@ -23,6 +23,10 @@ const adminRoutes = require('./src/routes/admin');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ==================== TRUST PROXY (Required for Railway) ====================
+// Must be set BEFORE session middleware so secure cookies work behind Railway's proxy
+app.set('trust proxy', 1);
+
 // ==================== MIDDLEWARE ====================
 
 // Parse JSON bodies
@@ -42,6 +46,7 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
@@ -79,8 +84,7 @@ app.get('/settings', requireAuth, async (req, res) => {
     }
 });
 
-// Admin portal - Now uses admin authentication (separate from client)
-// The admin.html page handles authentication via admin-login.html
+// Admin portal - admin.html handles auth check via /admin/auth/me
 app.get('/admin', (req, res) => {
     try {
         res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
@@ -103,10 +107,9 @@ app.get('/admin/portals', async (req, res) => {
     }
 });
 
-// Webhooks endpoint - Your existing webhook handler
+// Webhooks endpoint
 app.post('/webhooks/receive', async (req, res) => {
     try {
-        // Your existing webhook processing logic
         console.log('Webhook received:', req.body);
         res.status(200).send('OK');
     } catch (error) {
@@ -115,7 +118,7 @@ app.post('/webhooks/receive', async (req, res) => {
     }
 });
 
-// Account tier API - Your existing tier endpoint
+// Account tier API
 app.get('/api/account/tier', async (req, res) => {
     try {
         const portalId = req.query.portal_id;
@@ -124,7 +127,6 @@ app.get('/api/account/tier', async (req, res) => {
             return res.status(400).json({ error: 'portal_id is required' });
         }
         
-        // Your existing tier logic
         const result = await pool.query(
             'SELECT tier FROM portals WHERE portal_id = $1',
             [portalId]
@@ -144,7 +146,6 @@ app.get('/api/account/tier', async (req, res) => {
 
 // ==================== CLIENT FRONTEND ROUTES ====================
 
-// Redirect to static HTML files (served by express.static)
 app.get('/login', (req, res) => {
     res.redirect('/login.html');
 });
@@ -165,7 +166,7 @@ app.get('/user-management', (req, res) => {
     res.redirect('/user-management.html');
 });
 
-// Email verification endpoint (handles link from email)
+// Email verification endpoint
 app.get('/verify-email', (req, res) => {
     const token = req.query.token;
     
@@ -173,7 +174,6 @@ app.get('/verify-email', (req, res) => {
         return res.status(400).send('Verification token is required');
     }
     
-    // Inline verification page with API call
     res.send(`
         <!DOCTYPE html>
         <html>
@@ -223,9 +223,6 @@ app.get('/verify-email', (req, res) => {
                     text-decoration: none;
                     border-radius: 8px;
                     font-weight: 600;
-                }
-                a:hover {
-                    background: #1d4ed8;
                 }
                 p { color: #6b7280; line-height: 1.6; }
             </style>
@@ -321,14 +318,12 @@ async function testDatabaseConnection() {
 
 async function startServer() {
     try {
-        // Test database connection
         const dbConnected = await testDatabaseConnection();
         
         if (!dbConnected) {
             console.error('⚠️  Starting server without database connection');
         }
         
-        // Start listening
         app.listen(PORT, '0.0.0.0', () => {
             console.log('');
             console.log('🚀 SyncStation Server Started!');
