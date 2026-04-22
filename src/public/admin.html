@@ -14,7 +14,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* ── HEADER ── */
   .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
   .logo { font-family: 'DM Mono', monospace; font-size: 18px; display: flex; align-items: center; gap: 10px; }
   .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), #ffb347); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
@@ -24,7 +23,6 @@
   .btn-logout { padding: 6px 14px; background: var(--surface2); color: var(--muted); border: 1px solid var(--border); border-radius: 6px; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .btn-logout:hover { color: var(--error); border-color: var(--error); }
 
-  /* ── TABS ── */
   .tabs { display: flex; gap: 4px; padding: 0 40px; background: var(--surface); border-bottom: 1px solid var(--border); }
   .tab { padding: 14px 20px; cursor: pointer; font-size: 14px; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
   .tab.active { color: var(--text); border-bottom-color: var(--accent); }
@@ -34,13 +32,12 @@
   .panel { display: none; }
   .panel.active { display: block; }
 
-  /* ── STATS ── */
   .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
   .stat-value { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500; color: var(--accent); line-height: 1; margin-bottom: 4px; }
   .stat-label { font-size: 12px; color: var(--muted); }
 
-  /* ── PORTAL TABLE ── */
+  /* Portal table */
   .portal-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 24px; }
   .portal-table th { text-align: left; padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
   .portal-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
@@ -48,35 +45,21 @@
   .portal-row:hover td { background: var(--surface2); }
   .portal-row.expanded td { background: var(--surface2); border-bottom: none; }
 
-  /* ── USERS EXPAND ROW ── */
+  /* Users expand */
   .users-row { display: none; }
   .users-row.open { display: table-row; }
   .users-expand-cell { background: #16161a; border-bottom: 2px solid var(--border); padding: 0 !important; }
   .users-panel { padding: 20px 24px 24px 48px; }
-  .users-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .users-panel-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .users-panel-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
   .users-panel-title span { color: var(--muted); font-weight: 400; }
 
-  /* ── USERS INNER TABLE ── */
   .users-inner-table { width: 100%; border-collapse: collapse; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
   .users-inner-table th { text-align: left; padding: 9px 14px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); }
   .users-inner-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid rgba(46,46,56,0.6); background: var(--surface2); vertical-align: middle; }
   .users-inner-table tr:last-child td { border-bottom: none; }
   .users-inner-table tr:hover td { background: #25252f; }
 
-  /* ── RESET LINK MODAL ── */
-  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
-  .overlay.open { display: flex; }
-  .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 520px; padding: 32px; }
-  .modal-box h3 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .modal-box .sub { font-size: 14px; color: var(--muted); margin-bottom: 20px; }
-  .reset-url-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: 'DM Mono', monospace; font-size: 12px; word-break: break-all; color: var(--accent); margin-bottom: 16px; line-height: 1.6; }
-  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-  .email-status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
-  .email-status.sent  { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
-  .email-status.not-sent { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
-
-  /* ── BADGES ── */
+  /* Badges */
   .tier-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-family: 'DM Mono', monospace; }
   .tier-free      { background: rgba(96,165,250,0.1); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
   .tier-trial     { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
@@ -96,9 +79,13 @@
   .verified-yes { background: rgba(74,222,128,0.1); color: var(--success); }
   .verified-no  { background: rgba(251,191,36,0.1); color: var(--warning); }
 
-  .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; flex-shrink: 0; }
+  .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; }
   .dot-active   { background: var(--success); }
   .dot-inactive { background: var(--muted); }
+
+  .connected-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .connected-yes { background: rgba(74,222,128,0.1); color: var(--success); }
+  .connected-no  { background: rgba(136,136,160,0.1); color: var(--muted); }
 
   .count-pill { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-family: 'DM Mono', monospace; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
   .count-pill.hi   { background: rgba(255,107,53,0.08); border-color: rgba(255,107,53,0.3); color: var(--accent); }
@@ -112,7 +99,7 @@
   .chevron { display: inline-block; transition: transform 0.2s; color: var(--muted); font-size: 11px; margin-left: 6px; }
   .chevron.open { transform: rotate(90deg); color: var(--accent); }
 
-  /* ── FORM ELEMENTS ── */
+  /* Buttons */
   select, input, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 8px 12px; width: 100%; }
   select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
@@ -121,7 +108,9 @@
   .btn-primary:hover { background: #ff8555; }
   .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
   .btn-secondary:hover { color: var(--text); }
-  .btn-ghost  { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-danger    { background: rgba(248,113,113,0.12); color: var(--error); border: 1px solid rgba(248,113,113,0.3); }
+  .btn-danger:hover { background: rgba(248,113,113,0.25); }
+  .btn-ghost     { background: transparent; color: var(--muted); border: 1px solid var(--border); }
   .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
   .btn-sm { padding: 5px 12px; font-size: 12px; }
 
@@ -137,12 +126,33 @@
   .actions-row { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
   .hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
 
+  /* Confirm delete modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .overlay.open { display: flex; }
+  .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 480px; padding: 32px; }
+  .modal-icon { font-size: 40px; margin-bottom: 16px; }
+  .modal-box h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .modal-box p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 8px; }
+  .delete-list { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; }
+  .delete-list li { color: var(--muted); padding: 3px 0; list-style: none; display: flex; align-items: center; gap: 8px; }
+  .delete-list li::before { content: '—'; color: var(--error); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+  .confirm-input { margin: 16px 0 0; }
+  .confirm-input label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+
+  /* Reset link modal */
+  .reset-url-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: 'DM Mono', monospace; font-size: 12px; word-break: break-all; color: var(--accent); margin-bottom: 12px; line-height: 1.6; }
+  .email-status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; }
+  .email-sent     { background: rgba(74,222,128,0.1); color: var(--success); border: 1px solid rgba(74,222,128,0.3); }
+  .email-not-sent { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
+
   .loading-state { text-align: center; padding: 60px; color: var(--muted); }
   .spinner { border: 3px solid var(--surface2); border-top: 3px solid var(--accent); border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--success); border-radius: 8px; padding: 12px 18px; font-size: 14px; transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 300; max-width: 360px; }
   .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-left-color: var(--error); }
 
   .notif-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
   .notif-info    { background: rgba(96,165,250,0.1); color: #60a5fa; }
@@ -152,14 +162,12 @@
 
   .no-users { color: var(--muted); font-size: 13px; padding: 16px 0; font-style: italic; }
   .users-loading { color: var(--muted); font-size: 13px; padding: 16px 0; }
-
   .copy-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .copy-btn:hover { color: var(--text); border-color: var(--accent); }
 </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
 <div class="header">
   <div class="logo">
     <div class="logo-icon">⇄</div>
@@ -172,7 +180,6 @@
   </div>
 </div>
 
-<!-- ── TABS ── -->
 <div class="tabs">
   <div class="tab active" onclick="showPanel('portals', this)">Portals</div>
   <div class="tab" onclick="showPanel('messages', this)">Message Center</div>
@@ -181,7 +188,7 @@
 
 <div class="main">
 
-  <!-- PORTALS PANEL -->
+  <!-- PORTALS -->
   <div class="panel active" id="panel-portals">
     <div class="stats-bar">
       <div class="stat-card"><div class="stat-value" id="statTotal">—</div><div class="stat-label">Total portals</div></div>
@@ -196,13 +203,13 @@
       <span class="mono" id="checksStatus"></span>
       <span class="mono" id="lastUpdated" style="margin-left:auto"></span>
     </div>
-    <p class="hint">▶ Click any portal row to expand and see its users. Use the reset button to send a password reset link.</p>
+    <p class="hint">Click a portal row to see its users &amp; sync rules. Use 🗑 to permanently remove a portal connection.</p>
     <div id="portalsContainer">
       <div class="loading-state"><div class="spinner"></div><p>Loading portals...</p></div>
     </div>
   </div>
 
-  <!-- MESSAGES PANEL -->
+  <!-- MESSAGES -->
   <div class="panel" id="panel-messages">
     <div class="form-card">
       <h3>📬 Send In-App Notification</h3>
@@ -234,7 +241,7 @@
         </div>
         <div class="form-group full">
           <label class="form-label">Message</label>
-          <textarea id="msgBody" rows="4" placeholder="Upgrade now to keep your sync rules active."></textarea>
+          <textarea id="msgBody" rows="4"></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">Action Button Label (optional)</label>
@@ -258,7 +265,7 @@
     </div>
   </div>
 
-  <!-- NOTIFICATION HISTORY PANEL -->
+  <!-- HISTORY -->
   <div class="panel" id="panel-history">
     <div class="actions-row">
       <button class="btn btn-secondary btn-sm" onclick="loadHistory()">↻ Refresh</button>
@@ -270,22 +277,43 @@
 
 </div>
 
+<!-- ── DELETE CONFIRM MODAL ── -->
+<div class="overlay" id="deleteOverlay">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <h3>Delete Portal Connection</h3>
+    <p>This will permanently remove all data for portal <strong id="deletePortalId">—</strong>.</p>
+    <ul class="delete-list">
+      <li>HubSpot OAuth token (disconnects the app)</li>
+      <li>All sync rules &amp; property mappings</li>
+      <li>Tier / subscription record</li>
+      <li>All in-app notifications</li>
+      <li>User accounts linked to this portal</li>
+    </ul>
+    <p style="color:var(--error);font-size:13px">⚠ This cannot be undone. The HubSpot portal owner will need to reinstall the app to reconnect.</p>
+    <div class="confirm-input">
+      <label>Type the portal ID to confirm:</label>
+      <input type="text" id="deleteConfirmInput" placeholder="Enter portal ID">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn" onclick="confirmDelete()" disabled>Delete Everything</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── RESET LINK MODAL ── -->
 <div class="overlay" id="resetOverlay">
   <div class="modal-box">
     <h3>🔑 Password Reset Link</h3>
-    <p class="sub" id="resetModalSub">Generated for user</p>
-
-    <div class="email-status" id="resetEmailStatus"></div>
-
+    <p style="color:var(--muted);font-size:14px;margin-bottom:16px" id="resetModalSub">—</p>
+    <div class="email-status" id="resetEmailStatus" style="display:none"></div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Reset URL (expires in 1 hour):</p>
     <div class="reset-url-box" id="resetUrlDisplay">—</div>
-
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
       <button class="copy-btn" onclick="copyResetUrl()">📋 Copy Link</button>
-      <a id="resetUrlOpen" href="#" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:none;align-self:center;margin-left:4px">Open ↗</a>
+      <a id="resetUrlOpen" href="#" target="_blank" style="font-size:12px;color:var(--accent);text-decoration:none;margin-left:4px">Open ↗</a>
     </div>
-
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeResetModal()">Close</button>
     </div>
@@ -295,19 +323,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const TIER_PRICES    = { trial: 0, starter: 10, pro: 15, business: 40, cancelled: 0, suspended: 0, free: 0 };
+const TIER_PRICES     = { trial: 0, starter: 10, pro: 15, business: 40, cancelled: 0, suspended: 0, free: 0 };
 const expandedPortals = new Set();
 const usersCache      = {};
+let   deletePortalId  = null;
 let   currentResetUrl = '';
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-
 async function checkAuth() {
   try {
     const res = await fetch('/admin/auth/me', { credentials: 'include' });
     if (!res.ok) { window.location.href = '/admin/auth/login'; return false; }
     const data = await res.json();
-    document.getElementById('adminName').textContent = data.username || data.email || 'Admin';
+    document.getElementById('adminName').textContent = data.username || 'Admin';
     return true;
   } catch { window.location.href = '/admin/auth/login'; return false; }
 }
@@ -318,7 +346,6 @@ async function logout() {
 }
 
 // ── PANELS ────────────────────────────────────────────────────────────────────
-
 function showPanel(name, el) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -333,37 +360,35 @@ function toggleSpecificPortal() {
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
 function fmtDateTime(d) {
   if (!d) return 'Never';
-  return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(d).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
-
 function trialCountdown(createdAt, tier) {
   if (tier !== 'trial') return null;
-  const expiry   = new Date(createdAt).getTime() + (14 * 86400000);
+  const expiry   = new Date(createdAt).getTime() + 14 * 86400000;
   const daysLeft = Math.ceil((expiry - Date.now()) / 86400000);
   return { daysLeft, expiry, isExpired: daysLeft <= 0 };
 }
-
 function pill(value, label, hi = false) {
   const cls = value === 0 ? 'zero' : hi ? 'hi' : '';
   return `<span class="count-pill ${cls}">${value} ${label}</span>`;
 }
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 // ── LOAD PORTALS ──────────────────────────────────────────────────────────────
-
 async function loadPortals() {
   document.getElementById('portalsContainer').innerHTML =
     '<div class="loading-state"><div class="spinner"></div><p>Loading portals...</p></div>';
 
   try {
-    const res  = await fetch('/admin/api/portals', { credentials: 'include' });
+    const res = await fetch('/admin/api/portals', { credentials: 'include' });
     if (res.status === 401) { window.location.href = '/admin/auth/login'; return; }
     const { portals = [] } = await res.json();
 
@@ -410,9 +435,10 @@ async function loadPortals() {
         statusHtml = `<span class="countdown-pill countdown-ok">Active</span>`;
       }
 
-      const syncRules = p.sync_rule_count || 0;
-      const mappings  = p.total_mappings  || 0;
-      const users     = p.user_count      || 0;
+      const syncRules  = p.sync_rule_count || 0;
+      const mappings   = p.total_mappings  || 0;
+      const users      = p.user_count      || 0;
+      const connected  = p.has_token;
 
       rows += `
         <tr class="portal-row${isOpen ? ' expanded' : ''}" onclick="toggleUsers('${p.portal_id}', this)">
@@ -422,6 +448,11 @@ async function loadPortals() {
             <a href="/settings?portalId=${p.portal_id}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent);font-size:11px;text-decoration:none">Settings ↗</a>
           </td>
           <td><span class="tier-badge tier-${tierCls}">${tierLabel}</span></td>
+          <td>
+            <span class="connected-badge ${connected ? 'connected-yes' : 'connected-no'}">
+              ${connected ? '⬤ Connected' : '○ No token'}
+            </span>
+          </td>
           <td><span class="mono">${fmtDate(p.created_at)}</span></td>
           <td><span class="mono">${expiry}</span></td>
           <td>${statusHtml}</td>
@@ -433,7 +464,7 @@ async function loadPortals() {
             </div>
           </td>
           <td onclick="event.stopPropagation()">
-            <select id="tier-${p.portal_id}" style="width:150px">
+            <select id="tier-${p.portal_id}" style="width:148px">
               <option value="free"      ${tier==='free'?'selected':''}>Free</option>
               <option value="trial"     ${tier==='trial'?'selected':''}>Trial</option>
               <option value="starter"   ${tier==='starter'?'selected':''}>Starter ($10)</option>
@@ -446,10 +477,11 @@ async function loadPortals() {
           <td onclick="event.stopPropagation()" style="white-space:nowrap">
             <button class="btn btn-primary btn-sm" onclick="saveTier('${p.portal_id}')">Save</button>
             <button class="btn btn-secondary btn-sm" onclick="msgPortal('${p.portal_id}')" style="margin-left:4px">✉</button>
+            <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${p.portal_id}')" style="margin-left:4px" title="Delete portal connection">🗑</button>
           </td>
         </tr>
         <tr class="users-row ${isOpen ? 'open' : ''}" id="users-row-${p.portal_id}">
-          <td colspan="9" class="users-expand-cell">
+          <td colspan="10" class="users-expand-cell">
             <div class="users-panel" id="users-panel-${p.portal_id}">
               <div class="users-loading">Loading users...</div>
             </div>
@@ -461,14 +493,14 @@ async function loadPortals() {
       <table class="portal-table">
         <thead>
           <tr>
-            <th>Portal ID</th><th>Tier</th><th>Started</th><th>Expires</th>
-            <th>Status</th><th>Users</th><th>Sync Rules</th><th>Change Tier</th><th>Actions</th>
+            <th>Portal ID</th><th>Tier</th><th>HubSpot</th><th>Started</th>
+            <th>Expires</th><th>Status</th><th>Users</th><th>Sync Rules</th>
+            <th>Change Tier</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
 
-    // Re-render any previously expanded portals
     expandedPortals.forEach(id => renderUsers(id));
 
   } catch (err) {
@@ -478,7 +510,69 @@ async function loadPortals() {
   }
 }
 
-// ── EXPAND / COLLAPSE USERS ───────────────────────────────────────────────────
+// ── DELETE PORTAL ─────────────────────────────────────────────────────────────
+
+function openDeleteModal(portalId) {
+  deletePortalId = String(portalId);
+  document.getElementById('deletePortalId').textContent = deletePortalId;
+  document.getElementById('deleteConfirmInput').value   = '';
+  document.getElementById('deleteConfirmBtn').disabled  = true;
+  document.getElementById('deleteOverlay').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteOverlay').classList.remove('open');
+  deletePortalId = null;
+}
+
+// Enable delete button only when portal ID is typed correctly
+document.getElementById('deleteConfirmInput').addEventListener('input', function() {
+  document.getElementById('deleteConfirmBtn').disabled =
+    this.value.trim() !== deletePortalId;
+});
+
+async function confirmDelete() {
+  if (!deletePortalId) return;
+
+  const btn = document.getElementById('deleteConfirmBtn');
+  btn.textContent = 'Deleting...';
+  btn.disabled    = true;
+
+  try {
+    const res  = await fetch(`/admin/api/portals/${deletePortalId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast('✗ Delete failed: ' + (data.error || 'Unknown error'), true);
+      btn.textContent = 'Delete Everything';
+      btn.disabled    = false;
+      return;
+    }
+
+    closeDeleteModal();
+    showToast(`✓ Portal ${deletePortalId} deleted`);
+
+    // Remove from caches
+    delete usersCache[deletePortalId];
+    expandedPortals.delete(deletePortalId);
+
+    loadPortals();
+
+  } catch (err) {
+    showToast('✗ ' + err.message, true);
+    btn.textContent = 'Delete Everything';
+    btn.disabled    = false;
+  }
+}
+
+document.getElementById('deleteOverlay').addEventListener('click', e => {
+  if (e.target.id === 'deleteOverlay') closeDeleteModal();
+});
+
+// ── EXPAND USERS ──────────────────────────────────────────────────────────────
 
 async function toggleUsers(portalId, rowEl) {
   const id       = String(portalId);
@@ -517,21 +611,18 @@ async function renderUsers(portalId) {
     usersCache[portalId] = data.users || [];
     panel.innerHTML = buildUsersHTML(usersCache[portalId], portalId);
   } catch (err) {
-    panel.innerHTML = `<div class="users-loading" style="color:var(--error)">Failed to load users: ${err.message}</div>`;
+    panel.innerHTML = `<div class="users-loading" style="color:var(--error)">Failed: ${err.message}</div>`;
   }
 }
 
 function buildUsersHTML(users, portalId) {
-  const header = `
-    <div class="users-panel-header">
-      <div class="users-panel-title">
-        👥 Users
-        <span>(${users.length})</span>
-      </div>
-    </div>`;
+  const header = `<div class="users-panel-title">👥 Users <span>(${users.length})</span></div>`;
 
   if (!users.length) {
-    return header + '<div class="no-users">No registered users found for this portal.</div>';
+    return header + `<div class="no-users">
+      No users registered through the SyncStation auth system for this portal.<br>
+      <span style="font-size:12px">This portal connected via HubSpot OAuth only — users sign up separately at /register.</span>
+    </div>`;
   }
 
   const rows = users.map(u => {
@@ -554,10 +645,10 @@ function buildUsersHTML(users, portalId) {
       <td style="color:var(--muted);font-size:12px">${fmtDateTime(u.last_login)}</td>
       <td style="color:var(--muted);font-size:12px">${fmtDate(u.registered_at || u.invited_at)}</td>
       <td>
-        <button
-          class="btn btn-ghost btn-sm"
-          onclick="sendResetLink(${u.id}, '${escHtml(u.email)}', '${escHtml(u.full_name || '')}')"
-        >🔑 Reset Password</button>
+        <button class="btn btn-ghost btn-sm"
+          onclick="sendResetLink(${u.id}, '${escHtml(u.email)}', '${escHtml(u.full_name || '')}')">
+          🔑 Reset Password
+        </button>
       </td>
     </tr>`;
   }).join('');
@@ -565,23 +656,15 @@ function buildUsersHTML(users, portalId) {
   return header + `
     <table class="users-inner-table">
       <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Last Login</th>
-          <th>Joined</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>Name</th><th>Email</th><th>Role</th><th>Last Login</th><th>Joined</th><th>Actions</th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
 }
 
-// ── SEND RESET LINK ───────────────────────────────────────────────────────────
+// ── RESET PASSWORD ────────────────────────────────────────────────────────────
 
 async function sendResetLink(userId, email, name) {
-  // Show overlay with loading state
   document.getElementById('resetModalSub').textContent = `Generating link for ${name || email}...`;
   document.getElementById('resetUrlDisplay').textContent = '⏳ Generating...';
   document.getElementById('resetEmailStatus').style.display = 'none';
@@ -590,8 +673,7 @@ async function sendResetLink(userId, email, name) {
 
   try {
     const res  = await fetch(`/admin/api/users/${userId}/send-reset`, {
-      method: 'POST',
-      credentials: 'include',
+      method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
     });
     const data = await res.json();
@@ -602,20 +684,15 @@ async function sendResetLink(userId, email, name) {
     }
 
     currentResetUrl = data.resetUrl;
-
-    document.getElementById('resetModalSub').textContent =
-      `For ${data.name || data.email} — expires in 1 hour`;
+    document.getElementById('resetModalSub').textContent = `For ${data.name || data.email} — expires in 1 hour`;
     document.getElementById('resetUrlDisplay').textContent = data.resetUrl;
     document.getElementById('resetUrlOpen').href = data.resetUrl;
 
     const statusEl = document.getElementById('resetEmailStatus');
-    if (data.emailSent) {
-      statusEl.textContent = `✓ Reset email sent to ${data.email}`;
-      statusEl.className   = 'email-status sent';
-    } else {
-      statusEl.textContent = `Email not sent (SMTP not configured). Copy the link below and share it manually.`;
-      statusEl.className   = 'email-status not-sent';
-    }
+    statusEl.textContent  = data.emailSent
+      ? `✓ Reset email sent to ${data.email}`
+      : `Email not sent (SMTP not configured). Copy the link and share it manually.`;
+    statusEl.className    = 'email-status ' + (data.emailSent ? 'email-sent' : 'email-not-sent');
     statusEl.style.display = 'block';
 
   } catch (err) {
@@ -625,9 +702,8 @@ async function sendResetLink(userId, email, name) {
 
 function copyResetUrl() {
   if (!currentResetUrl) return;
-  navigator.clipboard.writeText(currentResetUrl).then(() => {
-    showToast('✓ Reset link copied to clipboard');
-  });
+  navigator.clipboard.writeText(currentResetUrl)
+    .then(() => showToast('✓ Reset link copied'));
 }
 
 function closeResetModal() {
@@ -640,7 +716,6 @@ document.getElementById('resetOverlay').addEventListener('click', e => {
 });
 
 // ── TIER SAVE ─────────────────────────────────────────────────────────────────
-
 async function saveTier(portalId) {
   const tier = document.getElementById('tier-' + portalId).value;
   try {
@@ -649,13 +724,10 @@ async function saveTier(portalId) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tier })
     });
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      showToast('✗ ' + (e.error || 'Failed')); return;
-    }
+    if (!res.ok) { const e = await res.json().catch(() => ({})); showToast('✗ ' + (e.error || 'Failed'), true); return; }
     showToast('✓ Tier updated to ' + tier);
     loadPortals();
-  } catch (err) { showToast('✗ ' + err.message); }
+  } catch (err) { showToast('✗ ' + err.message, true); }
 }
 
 function msgPortal(portalId) {
@@ -669,36 +741,33 @@ function msgPortal(portalId) {
 }
 
 // ── MESSAGES ──────────────────────────────────────────────────────────────────
-
 async function sendMessage() {
-  const target      = document.getElementById('msgTarget').value;
-  const type        = document.getElementById('msgType').value;
-  const title       = document.getElementById('msgTitle').value.trim();
-  const message     = document.getElementById('msgBody').value.trim();
-  const actionLabel = document.getElementById('msgActionLabel').value.trim();
-  const actionUrl   = document.getElementById('msgActionUrl').value.trim();
-  if (!title || !message) { showToast('Please fill in title and message'); return; }
-  const body = { type, title, message, actionLabel, actionUrl };
+  const target = document.getElementById('msgTarget').value;
+  const body   = {
+    type:        document.getElementById('msgType').value,
+    title:       document.getElementById('msgTitle').value.trim(),
+    message:     document.getElementById('msgBody').value.trim(),
+    actionLabel: document.getElementById('msgActionLabel').value.trim(),
+    actionUrl:   document.getElementById('msgActionUrl').value.trim()
+  };
+  if (!body.title || !body.message) { showToast('Please fill in title and message', true); return; }
   if (target === 'specific') body.portalId = document.getElementById('msgPortalId').value.trim();
   else body.all = true;
+
   try {
-    const res  = await fetch('/admin/api/notify', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const res  = await fetch('/admin/api/notify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json();
     document.getElementById('msgStatus').textContent = `✓ Sent to ${data.sent} portal(s)`;
     showToast('✓ Notification sent!');
     document.getElementById('msgTitle').value = '';
     document.getElementById('msgBody').value  = '';
-  } catch (err) { showToast('✗ ' + err.message); }
+  } catch (err) { showToast('✗ ' + err.message, true); }
 }
 
 function quickMsg(type) {
   const msgs = {
-    trial_expiring: { title: 'Your free trial is ending soon', message: 'Upgrade now to keep your sync rules active.', type: 'warning', actionLabel: 'View Plans', actionUrl: '/account' },
-    usage_90:       { title: "You've used 90% of your sync rules", message: 'Upgrade to add more rules.', type: 'warning', actionLabel: 'Upgrade', actionUrl: '/account' },
+    trial_expiring: { title: 'Your free trial is ending soon', message: 'Upgrade now to keep your sync rules active.', type: 'warning' },
+    usage_90:       { title: "You've used 90% of your sync rules", message: 'Upgrade to add more rules.', type: 'warning' },
     new_feature:    { title: '🎉 New Feature Available', message: "We've added new functionality to SyncStation!", type: 'info' },
     maintenance:    { title: '🔧 Scheduled Maintenance', message: 'SyncStation will be briefly unavailable for maintenance.', type: 'warning' }
   };
@@ -709,16 +778,12 @@ function quickMsg(type) {
 }
 
 // ── HISTORY ───────────────────────────────────────────────────────────────────
-
 async function loadHistory() {
-  document.getElementById('historyContainer').innerHTML =
-    '<div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>';
+  document.getElementById('historyContainer').innerHTML = '<div class="loading-state"><div class="spinner"></div><p>Loading...</p></div>';
   try {
-    const res  = await fetch('/admin/api/notifications', { credentials: 'include' });
-    const { notifications = [] } = await res.json();
+    const { notifications = [] } = await (await fetch('/admin/api/notifications', { credentials: 'include' })).json();
     if (!notifications.length) {
-      document.getElementById('historyContainer').innerHTML =
-        '<div class="loading-state"><p>No notifications yet</p></div>';
+      document.getElementById('historyContainer').innerHTML = '<div class="loading-state"><p>No notifications yet</p></div>';
       return;
     }
     const rows = notifications.map(n => `<tr>
@@ -734,14 +799,10 @@ async function loadHistory() {
         <thead><tr><th>Portal</th><th>Type</th><th>Title</th><th>Message</th><th>Status</th><th>Sent</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>`;
-  } catch {
-    document.getElementById('historyContainer').innerHTML =
-      '<div class="loading-state"><p style="color:var(--error)">Failed to load history</p></div>';
-  }
+  } catch { document.getElementById('historyContainer').innerHTML = '<div class="loading-state"><p style="color:var(--error)">Failed</p></div>'; }
 }
 
 // ── UTILITIES ─────────────────────────────────────────────────────────────────
-
 async function runChecks() {
   document.getElementById('checksStatus').textContent = 'Running...';
   try {
@@ -752,25 +813,17 @@ async function runChecks() {
   } catch { document.getElementById('checksStatus').textContent = '✗ Failed'; }
 }
 
-function showToast(msg) {
+function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.classList.add('show');
+  t.className   = 'toast show' + (isError ? ' error' : '');
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-function escHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
 // ── INIT ──────────────────────────────────────────────────────────────────────
-
 (async () => {
   const authed = await checkAuth();
-  if (authed) {
-    loadPortals();
-    setInterval(loadPortals, 60000);
-  }
+  if (authed) { loadPortals(); setInterval(loadPortals, 60000); }
 })();
 </script>
 </body>
