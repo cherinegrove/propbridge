@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SyncStation</title>
+    <title>Sign In - SyncStation</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -19,44 +19,43 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            max-width: 400px;
+            max-width: 420px;
             width: 100%;
             padding: 40px;
         }
         .logo { text-align: center; margin-bottom: 30px; }
         .logo h1 { color: #2563eb; font-size: 32px; margin-bottom: 8px; }
-        .logo p { color: #6b7280; font-size: 14px; }
+        .logo p  { color: #6b7280; font-size: 14px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; color: #374151; font-weight: 500; font-size: 14px; }
-        input[type="email"], input[type="password"] {
+        input {
             width: 100%; padding: 12px 15px; border: 2px solid #e5e7eb;
             border-radius: 8px; font-size: 14px; transition: all 0.3s;
         }
         input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .checkbox-group { display: flex; align-items: center; margin-bottom: 20px; }
-        .checkbox-group input { width: auto; margin-right: 8px; }
-        .checkbox-group label { margin: 0; color: #6b7280; font-size: 14px; }
         .btn {
             width: 100%; padding: 12px; background: #2563eb; color: white;
             border: none; border-radius: 8px; font-size: 16px; font-weight: 600;
-            cursor: pointer; transition: all 0.3s;
+            cursor: pointer; transition: all 0.3s; margin-top: 4px;
         }
-        .btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+        .btn:hover    { background: #1d4ed8; transform: translateY(-1px); }
         .btn:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
-        .links { margin-top: 20px; text-align: center; }
-        .links a { color: #2563eb; text-decoration: none; font-size: 14px; }
+        .links { margin-top: 20px; text-align: center; font-size: 14px; }
+        .links a { color: #2563eb; text-decoration: none; }
         .links a:hover { text-decoration: underline; }
-        .divider { text-align: center; margin: 20px 0; color: #9ca3af; font-size: 14px; }
+        .links .sep { color: #d1d5db; margin: 0 8px; }
         .alert { padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
         .alert-error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
         .alert-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+        .alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+        .loading { text-align: center; padding: 20px; color: #6b7280; }
     </style>
 </head>
 <body>
     <div class="card">
         <div class="logo">
             <h1>SyncStation</h1>
-            <p>HubSpot Property Sync Platform</p>
+            <p>Sign in to your account</p>
         </div>
 
         <div id="alertContainer"></div>
@@ -67,93 +66,85 @@
                 <input type="email" id="email" required autocomplete="email" placeholder="you@company.com">
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" required autocomplete="current-password" placeholder="Enter your password">
+                <label for="password">
+                    Password
+                    <a href="/forgot-password" style="float:right;font-weight:400;color:#2563eb;font-size:12px">Forgot password?</a>
+                </label>
+                <input type="password" id="password" required placeholder="Your password">
             </div>
-            <div class="checkbox-group">
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">Remember me</label>
-            </div>
-            <button type="submit" class="btn" id="loginBtn">Login</button>
+            <button type="submit" class="btn" id="loginBtn">Sign In</button>
         </form>
 
-        <div class="links">
-            <a href="/forgot-password">Forgot password?</a>
-        </div>
-        <div class="divider">Don't have an account?</div>
         <div class="links">
             <a href="/register">Create an account</a>
         </div>
     </div>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        const loginBtn  = document.getElementById('loginBtn');
-        const alertBox  = document.getElementById('alertContainer');
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const portalId  = urlParams.get('portalId') || urlParams.get('portal');
+        const form       = document.getElementById('loginForm');
+        const loginBtn   = document.getElementById('loginBtn');
+        const alertBox   = document.getElementById('alertContainer');
 
         function showAlert(msg, type = 'error') {
             alertBox.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
         }
 
-        loginForm.addEventListener('submit', async (e) => {
+        // Show banners from URL params (verified=1, invited, etc.)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('verified') === '1') {
+            showAlert('Email verified! You can now sign in.', 'success');
+        } else if (params.get('invited') === '1') {
+            showAlert('You\'ve been invited to a portal. Sign in to accept.', 'info');
+        } else if (params.get('error')) {
+            showAlert(decodeURIComponent(params.get('error')));
+        }
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const email      = document.getElementById('email').value;
-            const password   = document.getElementById('password').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
+            const email    = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
 
             loginBtn.disabled    = true;
-            loginBtn.textContent = 'Logging in...';
+            loginBtn.textContent = 'Signing in...';
             alertBox.innerHTML   = '';
 
             try {
-                const response = await fetch('/api/auth/login', {
+                const res  = await fetch('/api/auth/login', {
                     method:  'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify({ email, password, portalId })
+                    body:    JSON.stringify({ email, password })
                 });
+                const data = await res.json();
 
-                const data = await response.json();
-                if (!response.ok) throw new Error(data.error || 'Login failed');
+                if (!res.ok) throw new Error(data.error || 'Login failed');
 
-                // Store session token
-                const storage = rememberMe ? localStorage : sessionStorage;
-                storage.setItem('sessionToken', data.sessionToken);
-                localStorage.setItem('user',    JSON.stringify(data.user));
-                localStorage.setItem('portals', JSON.stringify(data.portals));
+                // ── Routing logic ───────────────────────────────────────────
+                // If user has no portals yet, send them to connect HubSpot first
+                if (!data.hasPortal) {
+                    loginBtn.textContent = 'Redirecting to HubSpot...';
+                    showAlert('Account verified! Now connect your HubSpot portal to continue.', 'info');
+                    setTimeout(() => {
+                        window.location.href = '/oauth/install';
+                    }, 1500);
+                    return;
+                }
 
-                showAlert('Login successful! Redirecting...', 'success');
+                // If user has one portal, go straight to settings
+                if (data.portals && data.portals.length === 1) {
+                    window.location.href = `/settings?portalId=${data.portalId}`;
+                    return;
+                }
 
-                // FIX: use portalId= (not portal=) to match what settings.html reads
-                setTimeout(() => {
-                    const pid = portalId || (data.portals && data.portals[0]?.portal_id);
-                    window.location.href = pid ? `/settings?portalId=${pid}` : '/settings';
-                }, 800);
+                // Multiple portals — go to portal picker (or just use first)
+                window.location.href = `/settings?portalId=${data.portalId}`;
 
             } catch (err) {
                 showAlert(err.message);
                 loginBtn.disabled    = false;
-                loginBtn.textContent = 'Login';
+                loginBtn.textContent = 'Sign In';
             }
         });
-
-        // Auto-redirect if already logged in
-        const existingToken = localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
-        if (existingToken) {
-            fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${existingToken}` } })
-                .then(r => r.ok ? r.json() : Promise.reject())
-                .then(data => {
-                    const pid = data.portals?.[0]?.portal_id;
-                    window.location.href = pid ? `/settings?portalId=${pid}` : '/settings';
-                })
-                .catch(() => {
-                    localStorage.removeItem('sessionToken');
-                    sessionStorage.removeItem('sessionToken');
-                });
-        }
     </script>
 </body>
 </html>
