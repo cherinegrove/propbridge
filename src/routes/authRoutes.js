@@ -73,7 +73,6 @@ router.post('/login', async (req, res) => {
             maxAge:   7 * 24 * 60 * 60 * 1000
         });
 
-        // Tell the client whether this user has portals yet
         const hasPortal = result.portals && result.portals.length > 0;
 
         res.json({
@@ -81,7 +80,6 @@ router.post('/login', async (req, res) => {
             user:      result.user,
             portals:   result.portals,
             hasPortal,
-            // If one portal, include it for convenience
             portalId:  hasPortal ? result.portals[0].portal_id : null
         });
 
@@ -94,8 +92,12 @@ router.post('/login', async (req, res) => {
 // ── LOGOUT ────────────────────────────────────────────────────────────────────
 
 router.post('/logout', async (req, res) => {
-    const token = req.cookies?.sessionToken;
-    if (token) await authService.logout(token);
+    try {
+        const token = req.cookies?.sessionToken;
+        if (token) await authService.logout(token);
+    } catch (err) {
+        console.error('[Auth] Logout error:', err.message);
+    }
     res.clearCookie('sessionToken');
     res.json({ success: true });
 });
@@ -103,17 +105,20 @@ router.post('/logout', async (req, res) => {
 // ── VERIFY SESSION ────────────────────────────────────────────────────────────
 
 router.get('/verify', requireAuth, async (req, res) => {
-    // Also return the list of portals for this user
-    const portals = await pool.query(
-        `SELECT pu.portal_id, pu.role,
-                COALESCE(ht.access_token IS NOT NULL, false) AS hubspot_connected
-         FROM portal_users pu
-         LEFT JOIN hubspot_tokens ht ON ht.portal_id = pu.portal_id
-         WHERE pu.user_id = $1 AND pu.is_active = true`,
-        [req.session.userId]
-    ).then(r => r.rows).catch(() => []);
+    try {
+        const portals = await pool.query(
+            `SELECT pu.portal_id, pu.role,
+                    COALESCE(ht.access_token IS NOT NULL, false) AS hubspot_connected
+             FROM portal_users pu
+             LEFT JOIN hubspot_tokens ht ON ht.portal_id = pu.portal_id
+             WHERE pu.user_id = $1 AND pu.is_active = true`,
+            [req.session.userId]
+        ).then(r => r.rows).catch(() => []);
 
-    res.json({ success: true, user: req.session, portals });
+        res.json({ success: true, user: req.session, portals });
+    } catch (err) {
+        res.json({ success: true, user: req.session, portals: [] });
+    }
 });
 
 // ── PORTAL CONNECTED CHECK ────────────────────────────────────────────────────
@@ -122,11 +127,17 @@ router.get('/portal/connected', requireAuth, async (req, res) => {
     const { portalId } = req.query;
     if (!portalId) return res.status(400).json({ error: 'portalId required' });
 
-    const result = await pool.query(
-        `SELECT id FROM hubspot_tokens WHERE portal_id = $1 AND access_token IS NOT NULL`,
-        [String(portalId)]
-    );
-    res.json({ connected: result.rows.length > 0 });
+    try {
+        const result = await pool.query(
+            `SELECT id FROM hubspot_tokens WHERE portal_id = $1 AND access_token IS NOT NULL`,
+            [String(portalId)]
+        );
+        res.json({ connected: result.rows.length > 0 });
+    } catch (err) {
+        // Never crash the process — table may not exist yet
+        console.error('[Auth] portal/connected error:', err.message);
+        res.json({ connected: false });
+    }
 });
 
 // ── EMAIL VERIFY ──────────────────────────────────────────────────────────────
@@ -135,7 +146,7 @@ router.get('/verify-email', async (req, res) => {
     try {
         const { token } = req.query;
         if (!token) return res.status(400).json({ error: 'Token required' });
-        const result = await authService.verifyEmail(token);
+        await authService.verifyEmail(token);
         res.redirect('/login?verified=1');
     } catch (err) {
         res.redirect('/login?error=' + encodeURIComponent(err.message));
@@ -149,8 +160,7 @@ router.post('/password-reset/request', async (req, res) => {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: 'Email required' });
         const result = await authService.requestPasswordReset(email);
-        // TODO: send reset email
-        console.log(`[Auth] Password reset requested for ${email}, token: ${result.resetToken}`);
+        console.log(`[Auth] Password reset for ${email}, token: ${result.resetToken}`);
         res.json({ success: true, message: 'If an account exists, a reset email has been sent.' });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -169,7 +179,6 @@ router.post('/password-reset/reset', async (req, res) => {
 });
 
 // ── INVITE USER ───────────────────────────────────────────────────────────────
-// Owners/admins can invite users to their portal
 
 router.post('/invite', requireAuth, async (req, res) => {
     try {
@@ -179,14 +188,12 @@ router.post('/invite', requireAuth, async (req, res) => {
         if (!portalId) return res.status(400).json({ error: 'No portal associated with this session' });
         if (!email)    return res.status(400).json({ error: 'Email is required' });
 
-        // Only owners can invite
         if (!['owner', 'admin'].includes(req.session.role)) {
             return res.status(403).json({ error: 'Only portal owners and admins can invite users' });
         }
 
-        // Generate invite token
         const inviteToken   = crypto.randomBytes(32).toString('hex');
-        const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        const inviteExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
         // Check if user already exists
         const existingUser = await pool.query(
@@ -195,7 +202,6 @@ router.post('/invite', requireAuth, async (req, res) => {
         );
 
         if (existingUser.rows.length > 0) {
-            // User exists — link them directly
             const userId = existingUser.rows[0].id;
             await pool.query(
                 `INSERT INTO portal_users (user_id, portal_id, role, invited_by, accepted_at)
@@ -204,8 +210,8 @@ router.post('/invite', requireAuth, async (req, res) => {
                 [userId, portalId, role, req.session.userId]
             );
             return res.json({
-                success: true,
-                message: `${email} already has an account and has been added to your portal.`,
+                success:  true,
+                message:  `${email} already has an account and has been added to your portal.`,
                 existing: true
             });
         }
@@ -226,7 +232,7 @@ router.post('/invite', requireAuth, async (req, res) => {
         res.json({
             success:   true,
             message:   `Invite sent to ${email}`,
-            inviteUrl, // remove from production response once emails are set up
+            inviteUrl,
             existing:  false
         });
 
@@ -236,7 +242,7 @@ router.post('/invite', requireAuth, async (req, res) => {
     }
 });
 
-// ── LIST PORTAL USERS ─────────────────────────────────────────────────────────
+// ── LIST PORTAL TEAM ──────────────────────────────────────────────────────────
 
 router.get('/team', requireAuth, async (req, res) => {
     try {
@@ -288,8 +294,7 @@ router.delete('/team/:userId', requireAuth, async (req, res) => {
         }
 
         await pool.query(
-            `UPDATE portal_users SET is_active = false
-             WHERE user_id = $1 AND portal_id = $2`,
+            `UPDATE portal_users SET is_active = false WHERE user_id = $1 AND portal_id = $2`,
             [targetUserId, portalId]
         );
 
