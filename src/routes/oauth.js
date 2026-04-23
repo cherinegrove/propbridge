@@ -8,14 +8,6 @@ const axios       = require('axios');
 const pool        = require('../services/database');
 const authService = require('../services/authService');
 
-const {
-    HUBSPOT_CLIENT_ID,
-    HUBSPOT_CLIENT_SECRET,
-    APP_URL
-} = process.env;
-
-const REDIRECT_URI = `${APP_URL}/oauth/callback`;
-
 const SCOPES = [
     'crm.objects.contacts.read',
     'crm.objects.contacts.write',
@@ -28,19 +20,26 @@ const SCOPES = [
     'oauth'
 ].join(' ');
 
+// Compute at request time so env vars are always resolved
+function getRedirectUri() {
+    const base = process.env.APP_BASE_URL || process.env.APP_URL || '';
+    return `${base}/oauth/callback`;
+}
+
 // ── /oauth/install ─────────────────────────────────────────────────────────────
-// Redirect user to HubSpot's consent screen
 
 router.get('/install', (req, res) => {
+    const redirectUri = getRedirectUri();
+    console.log('[OAuth] install — redirect_uri:', redirectUri);
+
     const authUrl = new URL('https://app.hubspot.com/oauth/authorize');
-    authUrl.searchParams.set('client_id',     HUBSPOT_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri',  REDIRECT_URI);
-    authUrl.searchParams.set('scope',         SCOPES);
+    authUrl.searchParams.set('client_id',    process.env.HUBSPOT_CLIENT_ID);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('scope',        SCOPES);
     res.redirect(authUrl.toString());
 });
 
 // ── /oauth/callback ────────────────────────────────────────────────────────────
-// HubSpot redirects here after the user grants access
 
 router.get('/callback', async (req, res) => {
     const { code, error } = req.query;
@@ -51,14 +50,16 @@ router.get('/callback', async (req, res) => {
     }
 
     try {
+        const redirectUri = getRedirectUri();
+
         // 1. Exchange code for tokens
         const tokenRes = await axios.post(
             'https://api.hubapi.com/oauth/v1/token',
             new URLSearchParams({
                 grant_type:    'authorization_code',
-                client_id:     HUBSPOT_CLIENT_ID,
-                client_secret: HUBSPOT_CLIENT_SECRET,
-                redirect_uri:  REDIRECT_URI,
+                client_id:     process.env.HUBSPOT_CLIENT_ID,
+                client_secret: process.env.HUBSPOT_CLIENT_SECRET,
+                redirect_uri:  redirectUri,
                 code
             }),
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -71,9 +72,9 @@ router.get('/callback', async (req, res) => {
             'https://api.hubapi.com/oauth/v1/access-tokens/' + access_token
         );
 
-        const portalId   = String(infoRes.data.hub_id);
-        const hubDomain  = infoRes.data.hub_domain || '';
-        const expiresAt  = new Date(Date.now() + expires_in * 1000);
+        const portalId  = String(infoRes.data.hub_id);
+        const hubDomain = infoRes.data.hub_domain || '';
+        const expiresAt = new Date(Date.now() + expires_in * 1000);
 
         console.log(`[OAuth] Callback for portal ${portalId}`);
 
@@ -92,27 +93,21 @@ router.get('/callback', async (req, res) => {
         );
 
         // 4. Auto-link the logged-in user to this portal
-        //    The session cookie is set by the client auth system
         const sessionToken = req.cookies?.sessionToken;
-        let linkedUserId   = null;
-
         if (sessionToken) {
             try {
                 const userSession = await authService.verifySession(sessionToken);
                 await authService.linkUserToPortal(userSession.userId, portalId, 'owner');
-                linkedUserId = userSession.userId;
                 console.log(`[OAuth] Linked user ${userSession.userId} → portal ${portalId}`);
             } catch (linkErr) {
-                // Not fatal — user may not be logged in (install from marketplace, etc.)
                 console.log('[OAuth] Could not link user to portal:', linkErr.message);
             }
         } else {
             console.log('[OAuth] No session cookie — portal connected without user link');
         }
 
-        // 5. Redirect to settings for this portal
-        const redirectUrl = `/settings?portalId=${portalId}&connected=1`;
-        res.redirect(redirectUrl);
+        // 5. Redirect to settings
+        res.redirect(`/settings?portalId=${portalId}&connected=1`);
 
     } catch (err) {
         console.error('[OAuth] Callback error:', err.response?.data || err.message);
@@ -121,7 +116,6 @@ router.get('/callback', async (req, res) => {
 });
 
 // ── /oauth/disconnect ──────────────────────────────────────────────────────────
-// Remove HubSpot tokens for a portal (owner only)
 
 router.post('/disconnect', async (req, res) => {
     const { portalId } = req.body;
