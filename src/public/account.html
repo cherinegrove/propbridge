@@ -299,7 +299,7 @@
     const tierOrder = ['starter', 'pro', 'business'];
     document.getElementById('tiersGrid').innerHTML = tierOrder.map(t => {
       const info      = TIERS[t];
-      const isCurrent = currentTier === t || (currentTier === 'trial' && t === 'starter');
+      const isCurrent = currentTier === t;
       const isPopular = t === 'pro';
       const isUpgrade = info.price > (TIERS[currentTier]?.price || 0);
       const btnClass  = isCurrent ? 'current-plan' : isUpgrade ? 'primary' : 'downgrade';
