@@ -165,7 +165,7 @@
   document.getElementById('navAccount').href  = '/account?portalId=' + portalId;
 
   const TIERS = {
-    trial:    { name: 'Free Trial',  price: 0,     maxMappings: 30,  desc: '7-day free trial' },
+    trial:    { name: 'Free Trial',  price: 0,     maxMappings: 30,  desc: '30-day free trial' },
     starter:  { name: 'Starter',     price: 10,   maxMappings: 20,  desc: 'Perfect for small teams' },
     pro:      { name: 'Pro',         price: 15,   maxMappings: 30,  desc: 'For growing businesses' },
     business: { name: 'Business',    price: 40,   maxMappings: 100, desc: 'For agencies & enterprise' }
@@ -219,11 +219,11 @@
       document.getElementById('planCard').className = 'plan-card ' + (isExpired ? 'expired' : currentTier);
       document.getElementById('planName').textContent = isExpired ? 'Trial Expired' : tierInfo.name;
       document.getElementById('planDesc').textContent = tierInfo.desc || '';
-      document.getElementById('planPrice').textContent = currentTier === 'trial' ? '7-Day Trial' : '$' + tierInfo.price;
+      document.getElementById('planPrice').textContent = currentTier === 'trial' ? 'Trial' : '$' + tierInfo.price;
 
       // Dates
       const trialStart  = tierRes.trial_started_at;
-     const trialExpiry = trialStart ? new Date(new Date(trialStart).getTime() + 7 * 86400000) : null;
+      const trialExpiry = trialStart ? new Date(new Date(trialStart).getTime() + 14 * 86400000) : null;
 
       let countdownHtml = '';
       if (currentTier === 'trial') {
@@ -346,10 +346,47 @@
   }
 
   async function confirmChange() {
-    const btn = document.getElementById('confirmBtn');
+    const btn     = document.getElementById('confirmBtn');
+    const newInfo = TIERS[selectedTier];
+    const curInfo = TIERS[currentTier] || TIERS.trial;
+    const isUpgrade = newInfo.price > (curInfo.price || 0);
+
     btn.textContent = 'Processing...';
     btn.disabled    = true;
 
+    // ── UPGRADE → redirect to Paddle checkout ────────────────────────────────
+    if (isUpgrade) {
+      try {
+        // Get user email from session verify endpoint
+        const verifyRes  = await fetch('/api/auth/verify');
+        const verifyData = await verifyRes.json();
+        const email      = verifyData.user?.email || '';
+
+        const res  = await fetch('/api/paddle/create-checkout', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email, plan: selectedTier, portalId })
+        });
+        const data = await res.json();
+
+        if (data.checkout_url) {
+          // Store portalId so payment-success page can redirect back
+          localStorage.setItem('syncstation_portal_id', portalId);
+          window.location.href = data.checkout_url;
+        } else {
+          throw new Error(data.error || 'Could not create checkout session');
+        }
+      } catch (err) {
+        const errBox = document.getElementById('errorBox');
+        errBox.textContent   = err.message || 'Could not start checkout. Please try again.';
+        errBox.style.display = 'block';
+        btn.textContent      = 'Confirm Change';
+        btn.disabled         = false;
+      }
+      return;
+    }
+
+    // ── DOWNGRADE → direct tier change (no payment needed) ───────────────────
     try {
       const res  = await fetch('/api/account/change-tier', {
         method:  'POST',
@@ -367,7 +404,6 @@
         return;
       }
 
-      // Success
       closeModal();
       document.getElementById('alertBanner').innerHTML = `
         <div class="alert-banner alert-success">✅ Your plan has been changed to ${TIERS[selectedTier].name}!</div>
