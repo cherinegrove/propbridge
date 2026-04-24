@@ -37,7 +37,11 @@ router.post('/create-checkout', async (req, res) => {
   }
 
   try {
-    const priceId = PRICE_IDS[plan];
+    const priceId   = PRICE_IDS[plan];
+    const baseUrl   = process.env.APP_BASE_URL || 'https://portal.syncstation.app';
+    const successUrl = `${baseUrl}/payment-success?portalId=${portalId}&plan=${plan}`;
+    const cancelUrl  = `${baseUrl}/account?portalId=${portalId}`;
+    console.log('[Paddle] Creating checkout — price:', priceId, 'success_url:', successUrl);
 
     // Create checkout session via Paddle API
     const response = await fetch('https://api.paddle.com/checkout-sessions', {
@@ -58,8 +62,8 @@ router.post('/create-checkout', async (req, res) => {
           portal_id: portalId,
           plan_tier: plan
         },
-        success_url: `${process.env.APP_BASE_URL || 'https://portal.syncstation.app'}/payment-success?portalId=${portalId}&plan=${plan}`,
-        cancel_url: `${process.env.APP_BASE_URL || 'https://portal.syncstation.app'}/account?portalId=${portalId}`
+        success_url: successUrl,
+        cancel_url: cancelUrl
       })
     });
 
