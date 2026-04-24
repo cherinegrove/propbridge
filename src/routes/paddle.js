@@ -43,8 +43,8 @@ router.post('/create-checkout', async (req, res) => {
     const cancelUrl  = `${baseUrl}/account?portalId=${portalId}`;
     console.log('[Paddle] Creating checkout — price:', priceId, 'success_url:', successUrl);
 
-    // Create checkout session via Paddle API
-    const response = await fetch('https://api.paddle.com/checkout-sessions', {
+    // Create hosted checkout via Paddle Billing API (transactions endpoint)
+    const response = await fetch('https://api.paddle.com/transactions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.PADDLE_API_KEY}`,
@@ -57,22 +57,24 @@ router.post('/create-checkout', async (req, res) => {
             quantity: 1
           }
         ],
-        ...(email ? { customer_email: email } : {}),
+        ...(email ? { customer: { email } } : {}),
         custom_data: {
           portal_id: portalId,
           plan_tier: plan
         },
-        success_url: successUrl,
-        cancel_url: cancelUrl
+        checkout: {
+          url: successUrl
+        }
       })
     });
 
     const data = await response.json();
+    console.log('[Paddle] Transaction response:', JSON.stringify(data?.data?.checkout || data?.error));
 
-    if (data.data && data.data.url) {
+    if (data.data && data.data.checkout && data.data.checkout.url) {
       res.json({
         success: true,
-        checkout_url: data.data.url,
+        checkout_url: data.data.checkout.url,
         session_id: data.data.id
       });
     } else {
