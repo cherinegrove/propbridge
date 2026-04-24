@@ -28,8 +28,8 @@ const PRICE_IDS = {
 router.post('/create-checkout', async (req, res) => {
   const { email, plan, portalId } = req.body;
 
-  if (!email || !plan || !portalId) {
-    return res.status(400).json({ error: 'Email, plan, and portalId required' });
+  if (!plan || !portalId) {
+    return res.status(400).json({ error: 'Plan and portalId required' });
   }
 
   if (!PRICE_IDS[plan]) {
@@ -53,7 +53,7 @@ router.post('/create-checkout', async (req, res) => {
             quantity: 1
           }
         ],
-        customer_email: email,
+        ...(email ? { customer_email: email } : {}),
         custom_data: {
           portal_id: portalId,
           plan_tier: plan
