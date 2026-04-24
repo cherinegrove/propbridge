@@ -77,7 +77,6 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
 });
 
-// Serve HTML pages directly (not as redirects to .html — avoids static file conflicts)
 app.get('/login',           (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'login.html')));
 app.get('/register',        (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'register.html')));
 app.get('/forgot-password', (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'forgot-password.html')));
@@ -139,6 +138,21 @@ async function startServer() {
         console.log(`🔐 Login:       https://portal.syncstation.app/login`);
         console.log(`⚙️  Settings:    https://portal.syncstation.app/settings`);
         console.log(`🔧 Admin:       https://portal.syncstation.app/admin/auth/login\n`);
+
+        // ── START POLLING SERVICE ─────────────────────────────────────────────
+        // Handles custom objects (Projects, etc.) that HubSpot webhooks don't support
+        try {
+            const { runPollingCycle, initPollingTable } = require('./src/services/pollingService');
+            initPollingTable()
+                .then(() => {
+                    console.log('[Polling] Service initialised — running every 15 minutes');
+                    runPollingCycle(); // Run once immediately on startup
+                    setInterval(runPollingCycle, 15 * 60 * 1000);
+                })
+                .catch(err => console.error('[Polling] Init error:', err.message));
+        } catch (err) {
+            console.error('[Polling] Failed to load polling service:', err.message);
+        }
     });
 }
 
