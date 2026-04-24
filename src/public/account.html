@@ -223,7 +223,7 @@
 
       // Dates
       const trialStart  = tierRes.trial_started_at;
-      const trialExpiry = trialStart ? new Date(new Date(trialStart).getTime() + 14 * 86400000) : null;
+      const trialExpiry = trialStart ? new Date(new Date(trialStart).getTime() + 7 * 86400000) : null;
 
       let countdownHtml = '';
       if (currentTier === 'trial') {
@@ -357,15 +357,10 @@
     // ── UPGRADE → redirect to Paddle checkout ────────────────────────────────
     if (isUpgrade) {
       try {
-        // Get user email from session verify endpoint
-        const verifyRes  = await fetch('/api/auth/verify');
-        const verifyData = await verifyRes.json();
-        const email      = verifyData.user?.email || '';
-
         const res  = await fetch('/api/paddle/create-checkout', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ email, plan: selectedTier, portalId })
+          body:    JSON.stringify({ email: '', plan: selectedTier, portalId })
         });
         const data = await res.json();
 
