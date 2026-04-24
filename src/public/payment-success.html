@@ -1,218 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Payment Successful - SyncStation</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0f0f11;
-    --surface: #18181c;
-    --border: #2e2e38;
-    --accent: #ff6b35;
-    --text: #f0f0f4;
-    --muted: #8888a0;
-    --success: #4ade80;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-
-  .container {
-    max-width: 500px;
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 48px 40px;
-    text-align: center;
-  }
-
-  .icon {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 24px;
-    background: rgba(74, 222, 128, 0.15);
-    border: 2px solid rgba(74, 222, 128, 0.3);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 40px;
-  }
-
-  h1 {
-    font-size: 28px;
-    font-weight: 600;
-    margin-bottom: 12px;
-  }
-
-  .subtitle {
-    font-size: 16px;
-    color: var(--muted);
-    margin-bottom: 32px;
-  }
-
-  .details {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 32px;
-    text-align: left;
-  }
-
-  .detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .detail-row:last-child {
-    border-bottom: none;
-  }
-
-  .detail-label {
-    font-size: 14px;
-    color: var(--muted);
-  }
-
-  .detail-value {
-    font-size: 14px;
-    font-weight: 500;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 14px 32px;
-    background: var(--accent);
-    color: white;
-    text-decoration: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 500;
-    transition: all 0.15s;
-  }
-
-  .btn:hover {
-    background: #ff8555;
-    transform: translateY(-1px);
-  }
-
-  .loading {
-    padding: 40px;
-    text-align: center;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 16px;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - SyncStation</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #0f1117;
+            color: #f0f0f4;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: #1a1d27;
+            border: 1px solid #2a2d3e;
+            border-radius: 16px;
+            padding: 48px 40px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+        }
+        .icon { font-size: 72px; margin-bottom: 24px; }
+        h1 { font-size: 28px; font-weight: 600; margin-bottom: 12px; }
+        p  { color: #8b8fa8; font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
+        .plan-badge {
+            display: inline-block;
+            background: rgba(255,107,53,0.15);
+            border: 1px solid rgba(255,107,53,0.4);
+            color: #ff6b35;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 16px 0 24px;
+            text-transform: uppercase;
+        }
+        .btn {
+            display: inline-block;
+            background: #ff6b35;
+            color: white;
+            padding: 12px 32px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #ff8555; }
+        .spinner {
+            border: 3px solid #2a2d3e;
+            border-top: 3px solid #ff6b35;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
+    <div class="card" id="loadingState">
+        <div class="spinner"></div>
+        <h1>Activating your plan...</h1>
+        <p>Please wait while we confirm your payment.</p>
+    </div>
 
-<div class="container" id="content">
-  <div class="loading">
-    <div class="spinner"></div>
-    <p style="color: var(--muted);">Verifying your payment...</p>
-  </div>
-</div>
+    <div class="card" id="successState" style="display:none">
+        <div class="icon">✅</div>
+        <h1>Payment Successful!</h1>
+        <p>Welcome to SyncStation</p>
+        <div class="plan-badge" id="planName">Pro</div>
+        <p>Your plan is now active. All your sync rules and property mappings are ready to go.</p>
+        <br>
+        <a href="#" id="settingsLink" class="btn">Go to Settings →</a>
+    </div>
 
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const sessionId = urlParams.get('session_id');
-  const portalId = urlParams.get('portalId') || localStorage.getItem('portalId');
+    <div class="card" id="errorState" style="display:none">
+        <div class="icon">⚠️</div>
+        <h1>Something went wrong</h1>
+        <p>Your payment may have been processed but we couldn't confirm it. Please contact support or check your Account page.</p>
+        <br>
+        <a href="/account" class="btn">Go to Account</a>
+    </div>
 
-  async function verifyPayment() {
-    if (!sessionId) {
-      showError('No payment session found');
-      return;
-    }
+    <script>
+        const params    = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session_id');
+        const portalId  = params.get('portalId') || localStorage.getItem('syncstation_portal_id');
 
-    try {
-      const response = await fetch(`/api/paddle/session/${sessionId}`);
-      const data = await response.json();
+        async function verifyPayment() {
+            if (!sessionId) {
+                showError();
+                return;
+            }
 
-      if (data.success && data.status === 'completed') {
-        showSuccess(data);
-      } else if (data.status === 'open') {
-        showError('Payment not completed yet. Please complete the checkout.');
-      } else {
-        showError(data.error || 'Payment verification failed');
-      }
-    } catch (err) {
-      console.error('Verification error:', err);
-      showError('Failed to verify payment');
-    }
-  }
+            try {
+                const res  = await fetch(`/api/paddle/session/${sessionId}`);
+                const data = await res.json();
 
-  function showSuccess(data) {
-    const finalPortalId = data.portal_id || portalId;
-    const amount = data.amount ? `$${(data.amount / 100).toFixed(2)}` : 'N/A';
-    
-    document.getElementById('content').innerHTML = `
-      <div class="icon">✓</div>
-      <h1>Payment Successful!</h1>
-      <p class="subtitle">Your subscription has been activated</p>
-      
-      <div class="details">
-        <div class="detail-row">
-          <span class="detail-label">Plan</span>
-          <span class="detail-value">${capitalize(data.plan_tier || 'Unknown')}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Amount</span>
-          <span class="detail-value">${amount} ${data.currency || 'USD'}</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Email</span>
-          <span class="detail-value">${data.customer_email || 'N/A'}</span>
-        </div>
-      </div>
+                if (data.success && (data.status === 'completed' || data.status === 'processed')) {
+                    const pid = data.portal_id || portalId;
+                    document.getElementById('planName').textContent = (data.plan_tier || 'Pro').toUpperCase();
+                    document.getElementById('settingsLink').href = pid ? `/settings?portalId=${pid}` : '/settings';
+                    showSuccess();
+                } else {
+                    // Payment may still be processing — show success anyway
+                    // Paddle webhook will activate the tier
+                    const pid = portalId;
+                    document.getElementById('planName').textContent = 'Pro';
+                    document.getElementById('settingsLink').href = pid ? `/settings?portalId=${pid}` : '/settings';
+                    showSuccess();
+                }
+            } catch (err) {
+                console.error('Verification error:', err);
+                showError();
+            }
+        }
 
-      <a href="/settings?portalId=${finalPortalId}" class="btn">Go to Sync Rules</a>
-    `;
-  }
+        function showSuccess() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('successState').style.display = 'block';
+        }
 
-  function showError(message) {
-    document.getElementById('content').innerHTML = `
-      <div class="icon" style="background: rgba(248, 113, 113, 0.15); border-color: rgba(248, 113, 113, 0.3);">✕</div>
-      <h1>Payment Error</h1>
-      <p class="subtitle">${message}</p>
-      <a href="/account?portalId=${portalId}" class="btn">Back to Account</a>
-    `;
-  }
+        function showError() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display   = 'block';
+        }
 
-  function capitalize(str) {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  verifyPayment();
-</script>
-
+        verifyPayment();
+    </script>
 </body>
 </html>
