@@ -6,6 +6,7 @@ const express     = require('express');
 const router      = express.Router();
 const axios       = require('axios');
 const pool        = require('../services/database');
+const tokenStore  = require('../services/tokenStore');
 const authService = require('../services/authService');
 
 // Full scope list matching HubSpot app configuration
@@ -136,7 +137,16 @@ router.get('/callback', async (req, res) => {
 
         console.log(`[OAuth] Callback for portal ${portalId}`);
 
-        // 3. Upsert tokens in DB
+        // 3a. Write to tokenStore (tokens table) — used by getClient() for property fetching
+        await tokenStore.set(portalId, {
+            access_token,
+            refresh_token,
+            expires_in,
+            hub_id:    portalId,
+            hub_domain: hubDomain
+        });
+
+        // 3b. Also write to hubspot_tokens table — used by auth/portal/connected check
         await pool.query(
             `INSERT INTO hubspot_tokens
                 (portal_id, access_token, refresh_token, expires_at, hub_domain)
@@ -180,7 +190,10 @@ router.post('/disconnect', async (req, res) => {
     if (!portalId) return res.status(400).json({ error: 'portalId required' });
 
     try {
-        await pool.query('DELETE FROM hubspot_tokens WHERE portal_id = $1', [String(portalId)]);
+        await Promise.all([
+            tokenStore.delete(portalId),
+            pool.query('DELETE FROM hubspot_tokens WHERE portal_id = $1', [String(portalId)])
+        ]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
