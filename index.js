@@ -9,18 +9,18 @@ const { requireAuth } = require('./src/middleware/requireAuth');
 const adminAuthRoutes = require('./src/routes/admin-auth');
 const adminRoutes     = require('./src/routes/admin');
 
-// Existing SyncStation routes
+// SyncStation routes
 const oauthRoutes    = require('./src/routes/oauth');
 const settingsRoutes = require('./src/routes/settings');
 const actionRoutes   = require('./src/routes/action');
 const webhookRoutes  = require('./src/routes/webhooks');
 const notifRoutes    = require('./src/routes/notifications');
 const accountRoutes  = require('./src/routes/account');
+const paddleRoutes   = require('./src/routes/paddle');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Required for Railway reverse proxy
 app.set('trust proxy', 1);
 
 // ── MIDDLEWARE ────────────────────────────────────────────────────────────────
@@ -55,10 +55,14 @@ app.use('/admin/api',  adminRoutes);
 
 // ── CLIENT AUTH ROUTES ────────────────────────────────────────────────────────
 
-app.use('/api/auth',  authRoutes);
-app.use('/api/users', authRoutes);
+app.use('/api/auth',   authRoutes);
+app.use('/api/users',  authRoutes);
 
-// ── EXISTING SYNCSTATION ROUTES ───────────────────────────────────────────────
+// ── BILLING ───────────────────────────────────────────────────────────────────
+
+app.use('/api/paddle', paddleRoutes);
+
+// ── SYNCSTATION ROUTES ────────────────────────────────────────────────────────
 
 app.use('/oauth',         oauthRoutes);
 app.use('/settings',      settingsRoutes);
@@ -77,11 +81,12 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
 });
 
-app.get('/login',           (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'login.html')));
-app.get('/register',        (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'register.html')));
-app.get('/forgot-password', (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'forgot-password.html')));
-app.get('/reset-password',  (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'reset-password.html')));
-app.get('/user-management', (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'user-management.html')));
+app.get('/login',            (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'login.html')));
+app.get('/register',         (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'register.html')));
+app.get('/forgot-password',  (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'forgot-password.html')));
+app.get('/reset-password',   (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'reset-password.html')));
+app.get('/user-management',  (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'user-management.html')));
+app.get('/payment-success',  (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'payment-success.html')));
 
 // Email verification page
 app.get('/verify-email', (req, res) => {
@@ -139,14 +144,13 @@ async function startServer() {
         console.log(`⚙️  Settings:    https://portal.syncstation.app/settings`);
         console.log(`🔧 Admin:       https://portal.syncstation.app/admin/auth/login\n`);
 
-        // ── START POLLING SERVICE ─────────────────────────────────────────────
-        // Handles custom objects (Projects, etc.) that HubSpot webhooks don't support
+        // Start polling service for custom objects (Projects etc.)
         try {
             const { runPollingCycle, initPollingTable } = require('./src/services/pollingService');
             initPollingTable()
                 .then(() => {
                     console.log('[Polling] Service initialised — running every 15 minutes');
-                    runPollingCycle(); // Run once immediately on startup
+                    runPollingCycle();
                     setInterval(runPollingCycle, 15 * 60 * 1000);
                 })
                 .catch(err => console.error('[Polling] Init error:', err.message));
