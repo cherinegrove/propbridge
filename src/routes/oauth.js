@@ -32,7 +32,8 @@ router.get('/install', (req, res) => {
     const redirectUri = getRedirectUri();
     console.log('[OAuth] install — redirect_uri:', redirectUri);
 
-    const authUrl = new URL('https://app.hubspot.com/oauth/authorize');
+    // Use EU HubSpot endpoint (app-eu1) to match your HubSpot account region
+    const authUrl = new URL('https://app-eu1.hubspot.com/oauth/authorize');
     authUrl.searchParams.set('client_id',    process.env.HUBSPOT_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope',        SCOPES);
