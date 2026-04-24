@@ -357,13 +357,35 @@ router.get('/objects', async (req, res) => {
       console.error('[Settings] This means the OAuth token likely does not have crm.schemas.* scopes');
     }
 
-    // Update OBJECTS_TO_TEST to include correct Projects objectTypeId
-    const objectsToTest = OBJECTS_TO_TEST.map(obj => {
-      if (obj.name === 'projects') {
-        return { ...obj, objectTypeId: projectsObjectTypeId };
-      }
-      return obj;
-    });
+    // Add custom objects from schemas to the test list
+    let customFromSchemas = [];
+    try {
+      const schemasForCustom = await axios.get(
+        'https://api-eu1.hubapi.com/crm/v3/schemas',
+        { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 10000 }
+      );
+      customFromSchemas = (schemasForCustom.data?.results || [])
+        .filter(s => !OBJECTS_TO_TEST.find(o => o.name === s.name))
+        .map(s => ({
+          name:         s.objectTypeId || s.name,
+          label:        s.labels?.singular || s.name,
+          objectTypeId: s.objectTypeId || s.name
+        }));
+      console.log(`[Settings] Found ${customFromSchemas.length} custom objects from schemas`);
+    } catch (err) {
+      console.log('[Settings] Could not fetch custom schemas:', err.message);
+    }
+
+    // Build final objects list: standard objects + custom objects from schemas
+    const objectsToTest = [
+      ...OBJECTS_TO_TEST.map(obj => {
+        if (obj.name === 'projects') {
+          return { ...obj, objectTypeId: projectsObjectTypeId };
+        }
+        return obj;
+      }),
+      ...customFromSchemas
+    ];
 
     // Test each object type in parallel by trying to fetch 1 property
     const testObject = async (obj) => {
