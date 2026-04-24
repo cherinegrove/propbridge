@@ -55,12 +55,13 @@ app.use('/admin/api',  adminRoutes);
 
 // ── CLIENT AUTH ROUTES ────────────────────────────────────────────────────────
 
-app.use('/api/auth',   authRoutes);
-app.use('/api/users',  authRoutes);
+app.use('/api/auth',    authRoutes);
+app.use('/api/users',   authRoutes);
 
 // ── BILLING ───────────────────────────────────────────────────────────────────
 
-app.use('/api/paddle', paddleRoutes);
+app.use('/api/paddle',  paddleRoutes);
+app.use('/api/account', accountRoutes);
 
 // ── SYNCSTATION ROUTES ────────────────────────────────────────────────────────
 
@@ -69,7 +70,6 @@ app.use('/settings',      settingsRoutes);
 app.use('/action',        actionRoutes);
 app.use('/webhooks',      webhookRoutes);
 app.use('/notifications', notifRoutes);
-app.use('/account',       accountRoutes);
 
 // ── PAGE ROUTES ───────────────────────────────────────────────────────────────
 
@@ -81,6 +81,7 @@ app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'src', 'public', 'admin.html'));
 });
 
+app.get('/account',          (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'account.html')));
 app.get('/login',            (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'login.html')));
 app.get('/register',         (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'register.html')));
 app.get('/forgot-password',  (req, res) => res.sendFile(path.join(__dirname, 'src', 'public', 'forgot-password.html')));
