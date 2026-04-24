@@ -8,16 +8,74 @@ const axios       = require('axios');
 const pool        = require('../services/database');
 const authService = require('../services/authService');
 
+// Full scope list matching HubSpot app configuration
 const SCOPES = [
-    'crm.objects.contacts.read',
-    'crm.objects.contacts.write',
+    'automation',
+    'crm.objects.appointments.read',
+    'crm.objects.appointments.write',
+    'crm.objects.carts.read',
+    'crm.objects.carts.write',
+    'crm.objects.commercepayments.read',
+    'crm.objects.commercepayments.write',
     'crm.objects.companies.read',
     'crm.objects.companies.write',
-    'crm.schemas.contacts.read',
-    'crm.schemas.contacts.write',
+    'crm.objects.contacts.read',
+    'crm.objects.contacts.write',
+    'crm.objects.courses.read',
+    'crm.objects.courses.write',
+    'crm.objects.custom.read',
+    'crm.objects.custom.write',
+    'crm.objects.deals.read',
+    'crm.objects.deals.write',
+    'crm.objects.goals.read',
+    'crm.objects.goals.write',
+    'crm.objects.invoices.read',
+    'crm.objects.invoices.write',
+    'crm.objects.leads.read',
+    'crm.objects.leads.write',
+    'crm.objects.line_items.read',
+    'crm.objects.line_items.write',
+    'crm.objects.listings.read',
+    'crm.objects.listings.write',
+    'crm.objects.marketing_events.read',
+    'crm.objects.marketing_events.write',
+    'crm.objects.orders.read',
+    'crm.objects.orders.write',
+    'crm.objects.products.read',
+    'crm.objects.products.write',
+    'crm.objects.projects.read',
+    'crm.objects.projects.write',
+    'crm.objects.quotes.read',
+    'crm.objects.quotes.write',
+    'crm.objects.services.read',
+    'crm.objects.services.write',
+    'crm.objects.subscriptions.read',
+    'crm.objects.subscriptions.write',
+    'crm.pipelines.orders.read',
+    'crm.pipelines.orders.write',
+    'crm.schemas.appointments.read',
+    'crm.schemas.appointments.write',
+    'crm.schemas.carts.read',
+    'crm.schemas.carts.write',
+    'crm.schemas.commercepayments.read',
+    'crm.schemas.commercepayments.write',
     'crm.schemas.companies.read',
     'crm.schemas.companies.write',
-    'oauth'
+    'crm.schemas.contacts.read',
+    'crm.schemas.contacts.write',
+    'crm.schemas.courses.read',
+    'crm.schemas.courses.write',
+    'crm.schemas.custom.read',
+    'crm.schemas.deals.read',
+    'crm.schemas.deals.write',
+    'crm.schemas.listings.read',
+    'crm.schemas.listings.write',
+    'crm.schemas.projects.read',
+    'crm.schemas.projects.write',
+    'crm.schemas.services.read',
+    'crm.schemas.services.write',
+    'oauth',
+    'tickets'
 ].join(' ');
 
 // Compute at request time so env vars are always resolved
@@ -32,7 +90,6 @@ router.get('/install', (req, res) => {
     const redirectUri = getRedirectUri();
     console.log('[OAuth] install — redirect_uri:', redirectUri);
 
-    // Use EU HubSpot endpoint (app-eu1) to match your HubSpot account region
     const authUrl = new URL('https://app-eu1.hubspot.com/oauth/authorize');
     authUrl.searchParams.set('client_id',    process.env.HUBSPOT_CLIENT_ID);
     authUrl.searchParams.set('redirect_uri', redirectUri);
