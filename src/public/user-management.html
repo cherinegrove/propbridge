@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="/images/favicon.png">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - SyncStation</title>
+    <title>Team - SyncStation</title>
+    <link rel="icon" type="image/png" href="/images/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
     :root {
         --bg: #0F0F11; --surface: #18181C; --surface2: #222228;
@@ -17,10 +17,10 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; isolation: isolate; }
     .logo { display: flex; align-items: center; gap: 12px; font-family: 'DM Mono', monospace; font-size: 18px; flex: 1; }
-    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .logo-icon img { width: 32px; height: 32px; border-radius: 8px; }
+    .logo-icon { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; }
+    .logo-icon img { width: 32px; height: 32px; }
     .header-nav { display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); position: absolute; left: 50%; transform: translateX(-50%); }
     .header-nav a { text-decoration: none; font-size: 14px; font-weight: 500; padding: 7px 20px; border-radius: 6px; transition: all 0.15s; color: var(--muted); }
     .header-nav a.active { background: var(--bg); color: var(--text); }
@@ -32,91 +32,119 @@
     .page-subtitle { color: var(--muted); font-size: 15px; margin-bottom: 36px; }
 
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 24px; }
-    .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
 
-    .actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .invite-row { display: flex; gap: 12px; align-items: flex-end; }
+    .invite-row .form-group { flex: 1; margin: 0; }
+    .invite-row .form-group.role { max-width: 160px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-group input, .form-group select {
+        width: 100%; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 8px; font-size: 14px; color: var(--text); font-family: 'DM Sans', sans-serif; transition: all 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,53,0.1); }
+    .form-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; appearance: none; -webkit-appearance: none; }
+    .form-group select option { background: var(--surface2); }
+
     .btn { padding: 10px 20px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
     .btn-primary { background: var(--accent); color: white; }
     .btn-primary:hover { background: #FF8555; }
-    .btn-secondary { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-    .btn-secondary:hover { border-color: var(--accent); color: var(--text); }
-    .btn-danger { background: rgba(255,84,104,0.1); color: var(--error); border: 1px solid rgba(255,84,104,0.3); }
+    .btn-danger { background: rgba(255,84,104,0.1); color: var(--error); border: 1px solid rgba(255,84,104,0.3); padding: 6px 12px; font-size: 12px; }
     .btn-danger:hover { background: rgba(255,84,104,0.2); }
-    .btn-small { padding: 6px 12px; font-size: 12px; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .section-title { font-size: 16px; font-weight: 600; }
+    .user-count { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; }
 
     .users-table { width: 100%; border-collapse: collapse; }
     .users-table th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
-    .users-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+    .users-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
     .users-table tr:last-child td { border-bottom: none; }
     .users-table tr:hover td { background: var(--surface2); }
+    .user-name { font-weight: 500; color: var(--text); margin-bottom: 2px; }
+    .user-email { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; }
 
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; font-family: 'DM Mono', monospace; }
     .badge-owner   { background: rgba(255,107,53,0.15); color: var(--accent); border: 1px solid rgba(255,107,53,0.3); }
     .badge-admin   { background: rgba(163,18,86,0.15); color: #D44A8A; border: 1px solid rgba(163,18,86,0.3); }
     .badge-user    { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-    .badge-pending { background: rgba(238,142,90,0.1); color: var(--warning); border: 1px solid rgba(238,142,90,0.3); }
     .badge-active  { background: rgba(63,208,137,0.1); color: var(--success); border: 1px solid rgba(63,208,137,0.3); }
-
-    .invite-form { display: flex; gap: 12px; align-items: flex-end; }
-    .invite-form .form-group { flex: 1; margin: 0; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
-    .form-group input, .form-group select {
-        width: 100%; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border);
-        border-radius: 8px; font-size: 14px; color: var(--text); transition: all 0.2s;
-        font-family: 'DM Sans', sans-serif;
-    }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,107,53,0.1); }
+    .badge-pending { background: rgba(238,142,90,0.1); color: var(--warning); border: 1px solid rgba(238,142,90,0.3); }
 
     .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
     .alert-error   { background: rgba(255,84,104,0.1); color: var(--error); border: 1px solid rgba(255,84,104,0.3); }
     .alert-success { background: rgba(63,208,137,0.1); color: var(--success); border: 1px solid rgba(63,208,137,0.3); }
 
-    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
-    .empty-state p { margin-top: 8px; font-size: 14px; }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
 
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 420px; padding: 32px; }
-    .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-    .modal-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border); margin-top: 20px; }
-</style>
+    .pending-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+    .pending-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .pending-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .pending-item:last-child { border-bottom: none; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>User Management</h1>
-            <p>Manage users who have access to this portal</p>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon"><img src="/images/icon.webp" alt="SS" onerror="this.parentElement.style.cssText='width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#FF6B35,#A31256)'"></div>
+            SyncStation
         </div>
-        
+        <nav class="header-nav">
+            <a id="navSettings" href="#">Sync Rules</a>
+            <a id="navAccount" href="#">Account</a>
+            <a id="navTeam" href="#" class="active">Team</a>
+        </nav>
+        <div class="portal-badge" id="portalBadge">Loading...</div>
+    </header>
+
+    <main class="main">
+        <div class="page-title">Team Management</div>
+        <div class="page-subtitle">Invite and manage users who have access to this portal.</div>
+
         <div id="alertContainer"></div>
-        
-        <div class="actions">
-            <div>
-                <span id="userCount" style="color: #6b7280; font-size: 14px;"></span>
-            </div>
-            <button class="btn btn-primary" onclick="openInviteModal()">
-                + Invite User
-            </button>
-        </div>
-        
+
+        <!-- Invite Form -->
         <div class="card">
-            <div id="loadingState" class="empty-state">
-                <div class="empty-state-icon">⏳</div>
-                <h3>Loading users...</h3>
-            </div>
-            
-            <div id="emptyState" class="empty-state hidden">
-                <div class="empty-state-icon">👥</div>
-                <h3>No Users Yet</h3>
-                <p>Invite team members to collaborate on this portal</p>
-                <button class="btn btn-primary" onclick="openInviteModal()" style="margin-top: 20px;">
-                    Invite Your First User
+            <div class="section-title" style="margin-bottom:20px">Invite a Team Member</div>
+            <div class="invite-row">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="inviteEmail" placeholder="colleague@company.com">
+                </div>
+                <div class="form-group role">
+                    <label>Role</label>
+                    <select id="inviteRole">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="inviteBtn" onclick="inviteUser()" style="white-space:nowrap;height:42px;align-self:flex-end">
+                    + Invite User
                 </button>
             </div>
-            
-            <div id="usersTableContainer" class="hidden">
+        </div>
+
+        <!-- Users Table -->
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Team Members</div>
+                <div class="user-count" id="userCount"></div>
+            </div>
+
+            <div id="loadingState" class="empty-state">
+                <div class="empty-icon">⏳</div>
+                <div class="empty-title">Loading team...</div>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display:none">
+                <div class="empty-icon">👥</div>
+                <div class="empty-title">No team members yet</div>
+                <p>Invite colleagues using the form above.</p>
+            </div>
+
+            <div id="usersContainer" style="display:none">
                 <table class="users-table">
                     <thead>
                         <tr>
@@ -124,290 +152,128 @@
                             <th>Role</th>
                             <th>Status</th>
                             <th>Last Login</th>
-                            <th>Invited By</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody">
-                    </tbody>
+                    <tbody id="usersTableBody"></tbody>
                 </table>
+                <div id="pendingSection" class="pending-section" style="display:none">
+                    <div class="pending-title">Pending Invites</div>
+                    <div id="pendingList"></div>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Invite User Modal -->
-    <div id="inviteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Invite User</h2>
-                <button class="close-btn" onclick="closeInviteModal()">&times;</button>
-            </div>
-            
-            <div id="modalAlert"></div>
-            
-            <form id="inviteForm">
-                <div class="form-group">
-                    <label for="userEmail">Email Address</label>
-                    <input type="email" id="userEmail" required placeholder="user@company.com">
-                </div>
-                
-                <div class="form-group">
-                    <label for="userFullName">Full Name</label>
-                    <input type="text" id="userFullName" required placeholder="John Doe">
-                </div>
-                
-                <div class="form-group">
-                    <label for="userRole">Role</label>
-                    <select id="userRole" required>
-                        <option value="user">User - Can view and create sync rules</option>
-                        <option value="admin">Admin - Can manage users and settings</option>
-                    </select>
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeInviteModal()" style="flex: 1;">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="inviteBtn" style="flex: 1;">
-                        Send Invitation
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
+    </main>
+
     <script>
-        let currentUser = null;
-        let portalId = null;
-        let sessionToken = null;
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            // Get session token
-            sessionToken = localStorage.getItem('sessionToken') || sessionStorage.getItem('sessionToken');
-            
-            if (!sessionToken) {
-                window.location.href = '/login';
-                return;
-            }
-            
-            // Get portal ID from URL
-            const urlParams = new URLSearchParams(window.location.search);
-            portalId = urlParams.get('portal');
-            
-            if (!portalId) {
-                showAlert('Portal ID is required', 'error');
-                return;
-            }
-            
-            // Verify session and get current user
-            try {
-                const response = await fetch('/api/auth/me', {
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Session expired');
-                }
-                
-                const data = await response.json();
-                currentUser = data.user;
-                
-                // Load users
-                await loadUsers();
-                
-            } catch (error) {
-                window.location.href = '/login';
-            }
-        });
-        
-        // Load users
-        async function loadUsers() {
-            try {
-                const response = await fetch(`/api/users/portal/${portalId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to load users');
-                }
-                
-                const data = await response.json();
-                displayUsers(data.users);
-                
-            } catch (error) {
-                showAlert(error.message, 'error');
-                document.getElementById('loadingState').classList.add('hidden');
-                document.getElementById('emptyState').classList.remove('hidden');
-            }
+        const urlParams = new URLSearchParams(window.location.search);
+        const portalId  = urlParams.get('portalId') || localStorage.getItem('syncstation_portal_id') || '';
+
+        document.getElementById('navSettings').href = `/settings?portalId=${portalId}`;
+        document.getElementById('navAccount').href  = `/account?portalId=${portalId}`;
+        document.getElementById('navTeam').href     = `/user-management?portalId=${portalId}`;
+        document.getElementById('portalBadge').textContent = 'Portal ' + (portalId || '—');
+        if (portalId) localStorage.setItem('syncstation_portal_id', portalId);
+
+        function showAlert(msg, type = 'error') {
+            const box = document.getElementById('alertContainer');
+            box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+            setTimeout(() => box.innerHTML = '', 5000);
         }
-        
-        // Display users
-        function displayUsers(users) {
-            const loadingState = document.getElementById('loadingState');
-            const emptyState = document.getElementById('emptyState');
-            const tableContainer = document.getElementById('usersTableContainer');
-            const tableBody = document.getElementById('usersTableBody');
-            const userCount = document.getElementById('userCount');
-            
-            loadingState.classList.add('hidden');
-            
-            if (users.length === 0) {
-                emptyState.classList.remove('hidden');
-                tableContainer.classList.add('hidden');
-                return;
-            }
-            
-            emptyState.classList.add('hidden');
-            tableContainer.classList.remove('hidden');
-            
-            userCount.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
-            
-            tableBody.innerHTML = users.map(user => `
-                <tr>
-                    <td>
-                        <div style="font-weight: 600;">${user.full_name}</div>
-                        <div style="color: #6b7280; font-size: 12px;">${user.email}</div>
-                        ${!user.email_verified ? '<div style="color: #ef4444; font-size: 12px;">⚠️ Email not verified</div>' : ''}
-                    </td>
-                    <td>
-                        <span class="badge badge-${user.role}">${user.role.toUpperCase()}</span>
-                    </td>
-                    <td>
-                        <span class="badge ${user.portal_active && user.user_active ? 'badge-active' : 'badge-inactive'}">
-                            ${user.portal_active && user.user_active ? 'Active' : 'Inactive'}
-                        </span>
-                    </td>
-                    <td>
-                        ${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
-                    </td>
-                    <td>
-                        ${user.invited_by_name || '-'}
-                    </td>
-                    <td>
-                        <div class="action-buttons">
-                            ${user.role !== 'owner' && user.id !== currentUser.userId ? `
-                                <button class="btn btn-small btn-danger" onclick="removeUser(${user.id}, '${user.full_name}')">
-                                    Remove
-                                </button>
-                            ` : '-'}
+
+        async function loadTeam() {
+            try {
+                const res  = await fetch(`/api/auth/team?portalId=${portalId}`);
+                const data = await res.json();
+                document.getElementById('loadingState').style.display = 'none';
+                if (!data.success) throw new Error(data.error);
+
+                const users   = data.users   || [];
+                const pending = data.pending  || [];
+
+                if (users.length === 0 && pending.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('usersContainer').style.display = 'block';
+                document.getElementById('userCount').textContent = `${users.length} member${users.length !== 1 ? 's' : ''}`;
+
+                document.getElementById('usersTableBody').innerHTML = users.map(u => `
+                    <tr>
+                        <td>
+                            <div class="user-name">${u.full_name || '—'}</div>
+                            <div class="user-email">${u.email}</div>
+                            ${!u.email_verified ? '<div style="font-size:11px;color:var(--warning);margin-top:2px">⚠ Email not verified</div>' : ''}
+                        </td>
+                        <td><span class="badge badge-${u.role}">${u.role.toUpperCase()}</span></td>
+                        <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-pending'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+                        <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${u.last_login ? new Date(u.last_login).toLocaleDateString() : 'Never'}</td>
+                        <td>${u.role !== 'owner' ? `<button class="btn btn-danger" onclick="removeUser(${u.id}, '${u.full_name}')">Remove</button>` : '—'}</td>
+                    </tr>
+                `).join('');
+
+                if (pending.length > 0) {
+                    document.getElementById('pendingSection').style.display = 'block';
+                    document.getElementById('pendingList').innerHTML = pending.map(p => `
+                        <div class="pending-item">
+                            <span style="font-family:'DM Mono',monospace;font-size:13px">${p.email}</span>
+                            <div style="display:flex;align-items:center;gap:12px">
+                                <span class="badge badge-${p.role}">${p.role.toUpperCase()}</span>
+                                <span style="font-size:12px;color:var(--muted)">Expires ${new Date(p.expires_at).toLocaleDateString()}</span>
+                            </div>
                         </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // Show alert
-        function showAlert(message, type = 'error') {
-            const alertContainer = document.getElementById('alertContainer');
-            alertContainer.innerHTML = `
-                <div class="alert alert-${type}">
-                    ${message}
-                </div>
-            `;
-            setTimeout(() => {
-                alertContainer.innerHTML = '';
-            }, 5000);
-        }
-        
-        // Modal functions
-        function openInviteModal() {
-            document.getElementById('inviteModal').classList.add('show');
-            document.getElementById('inviteForm').reset();
-            document.getElementById('modalAlert').innerHTML = '';
-        }
-        
-        function closeInviteModal() {
-            document.getElementById('inviteModal').classList.remove('show');
-        }
-        
-        // Invite user
-        document.getElementById('inviteForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const email = document.getElementById('userEmail').value;
-            const fullName = document.getElementById('userFullName').value;
-            const role = document.getElementById('userRole').value;
-            const inviteBtn = document.getElementById('inviteBtn');
-            const modalAlert = document.getElementById('modalAlert');
-            
-            inviteBtn.disabled = true;
-            inviteBtn.textContent = 'Sending...';
-            modalAlert.innerHTML = '';
-            
-            try {
-                const response = await fetch('/api/users/invite', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email,
-                        fullName,
-                        portalId,
-                        role
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to invite user');
+                    `).join('');
                 }
-                
-                closeInviteModal();
-                showAlert('User invited successfully! They will receive an email with login instructions.', 'success');
-                await loadUsers();
-                
-            } catch (error) {
-                modalAlert.innerHTML = `<div class="alert alert-error">${error.message}</div>`;
+            } catch (err) {
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        }
+
+        async function inviteUser() {
+            const email = document.getElementById('inviteEmail').value.trim();
+            const role  = document.getElementById('inviteRole').value;
+            const btn   = document.getElementById('inviteBtn');
+
+            if (!email) { showAlert('Please enter an email address'); return; }
+            if (!portalId) { showAlert('No portal ID — please go back to settings'); return; }
+
+            btn.disabled    = true;
+            btn.textContent = 'Sending...';
+            try {
+                const res  = await fetch('/api/auth/invite', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ email, role, portalId })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to send invite');
+                showAlert(data.message || `Invite sent to ${email}`, 'success');
+                document.getElementById('inviteEmail').value = '';
+                await loadTeam();
+            } catch (err) {
+                showAlert(err.message);
             } finally {
-                inviteBtn.disabled = false;
-                inviteBtn.textContent = 'Send Invitation';
-            }
-        });
-        
-        // Remove user
-        async function removeUser(userId, userName) {
-            if (!confirm(`Are you sure you want to remove ${userName} from this portal?`)) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/users/${userId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${sessionToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ portalId })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to remove user');
-                }
-                
-                showAlert('User removed successfully', 'success');
-                await loadUsers();
-                
-            } catch (error) {
-                showAlert(error.message, 'error');
+                btn.disabled    = false;
+                btn.textContent = '+ Invite User';
             }
         }
-        
-        // Close modal on outside click
-        document.getElementById('inviteModal').addEventListener('click', (e) => {
-            if (e.target.id === 'inviteModal') {
-                closeInviteModal();
+
+        async function removeUser(userId, name) {
+            if (!confirm(`Remove ${name} from this portal?`)) return;
+            try {
+                const res  = await fetch(`/api/auth/team/${userId}?portalId=${portalId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to remove user');
+                showAlert(`${name} has been removed.`, 'success');
+                await loadTeam();
+            } catch (err) {
+                showAlert(err.message);
             }
-        });
+        }
+
+        loadTeam();
     </script>
 </body>
 </html>
