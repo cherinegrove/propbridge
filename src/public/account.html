@@ -17,8 +17,8 @@
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
   .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; isolation: isolate; }
-  .logo { display: flex; align-items: center; flex: 1; }
-  .logo img { width: 170px; height: 48px; }
+  .logo { display: flex; align-items: center; gap: 12px; font-family: 'DM Mono', monospace; font-size: 18px; flex: 1; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
   .header-nav { display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); position: absolute; left: 50%; transform: translateX(-50%); }
   .header-nav a { text-decoration: none; font-size: 14px; font-weight: 500; padding: 7px 20px; border-radius: 6px; transition: all 0.15s; color: var(--muted); }
   .header-nav a.active { background: var(--bg); color: var(--text); }
@@ -109,13 +109,16 @@
 <body>
 
 <div class="header">
-  <div class="logo"><img src="/images/SyncStation@2x.webp" alt="SyncStation" ></div>
+  <div class="logo"><div class="logo-icon" style="background:none;padding:0;"><img src="/images/icon.webp" alt="SS" style="width:32px;height:32px;border-radius:8px;"></div>SyncStation</div>
   <nav class="header-nav">
     <a id="navSettings" href="#">Sync Rules</a>
     <a id="navAccount" href="#" class="active">Account</a>
     <a id="navTeam" href="#">Team</a>
   </nav>
-  <div class="portal-badge" id="portalBadge">Loading...</div>
+  <div style="display:flex;align-items:center;gap:12px;flex:1;justify-content:flex-end">
+    <div class="portal-badge" id="portalBadge">Loading...</div>
+    <button onclick="logout()" style="background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">Sign Out</button>
+  </div>
 </div>
 
 <div class="main">
@@ -149,6 +152,32 @@
       <div style="color:var(--muted);font-size:13px">Reconnect or change your connected HubSpot portal</div>
     </div>
     <a href="/oauth/install" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);color:#ff6b35;padding:8px 18px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:500;white-space:nowrap">🔗 Connect HubSpot</a>
+  </div>
+
+  <!-- Contact Support & Cancel — side by side -->
+  <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+    <!-- Contact Support -->
+    <div style="padding:20px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-weight:600;margin-bottom:4px;color:var(--text)">Contact Support</div>
+        <div style="color:var(--muted);font-size:13px">We typically respond within 24 hours.</div>
+      </div>
+      <a href="mailto:support@syncstation.app" style="background:rgba(255,107,53,0.15);border:1px solid rgba(255,107,53,0.4);color:var(--accent);padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;text-decoration:none;white-space:nowrap">✉️ Email Us</a>
+    </div>
+
+    <!-- Cancel Subscription -->
+    <div style="padding:20px 24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;color:var(--text)">Cancel Subscription</div>
+          <div style="color:var(--muted);font-size:13px">We require 30 days notice. You keep access until the end of your billing period.</div>
+        </div>
+        <button onclick="requestCancellation()" style="background:rgba(255,84,104,0.1);border:1px solid rgba(255,84,104,0.3);color:var(--error);padding:8px 18px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;transition:all 0.15s" onmouseover="this.style.background='rgba(255,84,104,0.2)'" onmouseout="this.style.background='rgba(255,84,104,0.1)'">Cancel Plan</button>
+      </div>
+      <div id="cancelMsg" style="display:none;margin-top:16px;padding:12px 16px;background:rgba(63,208,137,0.1);border:1px solid rgba(63,208,137,0.3);border-radius:8px;font-size:14px;color:var(--success)"></div>
+    </div>
+
   </div>
 </div>
 
