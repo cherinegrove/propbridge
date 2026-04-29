@@ -206,6 +206,43 @@ Mapping Limit: ${tierData.maxMappings || 'unknown'}
       } catch (err) {
         console.log('[Chatbot] Could not fetch user context:', err.message);
       }
+
+      // Load recent sync logs if question seems related to sync issues
+      const syncKeywords = ['error', 'not working', 'failed', 'sync', 'didnt', "didn't", 'why', 'issue', 'problem', 'broken', 'log'];
+      const isAboutSyncing = syncKeywords.some(k => message.toLowerCase().includes(k));
+
+      if (isAboutSyncing && portalId && p) {
+        try {
+          const logsResult = await p.query(`
+            SELECT sync_time, status, error_message, object_type, rule_name,
+                   COALESCE(trigger_type, 'polling') AS trigger_type
+            FROM sync_logs
+            WHERE portal_id = $1
+            ORDER BY sync_time DESC
+            LIMIT 20
+          `, [String(portalId)]);
+
+          if (logsResult.rows.length > 0) {
+            userContext += `\nRecent Sync Activity (last 20 events):\n`;
+            logsResult.rows.forEach(log => {
+              const time   = new Date(log.sync_time).toLocaleString();
+              const status = log.status.toUpperCase();
+              const err    = log.error_message ? ` — Error: ${log.error_message}` : '';
+              userContext += `  [${time}] ${status} | ${log.object_type} | ${log.rule_name} | ${log.trigger_type}${err}\n`;
+            });
+
+            const errors = logsResult.rows.filter(l => l.status === 'error');
+            if (errors.length > 0) {
+              userContext += `\nThis portal has ${errors.length} recent error(s). Most recent: "${errors[0].error_message}"\n`;
+            }
+          } else {
+            userContext += `\nNo sync activity logged yet for this portal.\n`;
+          }
+          console.log('[Chatbot] Loaded sync logs for context');
+        } catch (err) {
+          console.log('[Chatbot] Could not fetch sync logs:', err.message);
+        }
+      }
     }
 
     // Get conversation history for context
