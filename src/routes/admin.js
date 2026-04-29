@@ -81,6 +81,7 @@ router.get('/portals/:portalId/users', requireAdmin, async (req, res) => {
   const p = getPool();
   const { portalId } = req.params;
   try {
+    // Get users from portal_users table (new auth system)
     const result = await p.query(`
       SELECT
         u.id,
@@ -101,7 +102,33 @@ router.get('/portals/:portalId/users', requireAdmin, async (req, res) => {
         u.full_name ASC
     `, [String(portalId)]);
 
-    res.json({ users: result.rows, portalId });
+    // Fallback: if no portal_users, show the HubSpot token installer email
+    let users = result.rows;
+    if (users.length === 0) {
+      try {
+        const tokenResult = await p.query(
+          `SELECT data->>'installerEmail' AS email, data->>'hub_id' AS hub_id, updated_at
+           FROM tokens WHERE portal_id = $1`,
+          [String(portalId)]
+        );
+        if (tokenResult.rows.length > 0 && tokenResult.rows[0].email) {
+          users = [{
+            id: null,
+            email: tokenResult.rows[0].email,
+            full_name: 'HubSpot Owner (OAuth)',
+            last_login: tokenResult.rows[0].updated_at,
+            email_verified: true,
+            is_active: true,
+            registered_at: tokenResult.rows[0].updated_at,
+            role: 'owner',
+            portal_active: true,
+            auth_source: 'hubspot_oauth'
+          }];
+        }
+      } catch (e) {}
+    }
+
+    res.json({ users, portalId });
   } catch (err) {
     console.error('[Admin] Error getting portal users:', err.message);
     res.json({ users: [], portalId, note: err.message });
@@ -284,10 +311,17 @@ router.get('/portals/:portalId/logs', requireAdmin, async (req, res) => {
   const { status, limit = 100, offset = 0 } = req.query;
 
   try {
+    // Check if trigger_type column exists
+    let hasTriggerType = false;
+    try {
+      await p.query("SELECT trigger_type FROM sync_logs LIMIT 1");
+      hasTriggerType = true;
+    } catch(e) {}
+
     let query = `
       SELECT id, portal_id, sync_time, status, error_message,
-             records_synced, object_type, rule_name,
-             COALESCE(trigger_type, 'polling') AS trigger_type
+             records_synced, object_type, rule_name
+             ${hasTriggerType ? ", COALESCE(trigger_type, 'polling') AS trigger_type" : ", 'polling' AS trigger_type"}
       FROM sync_logs
       WHERE portal_id = $1
     `;
@@ -313,7 +347,7 @@ router.get('/portals/:portalId/logs', requireAdmin, async (req, res) => {
         MAX(sync_time) FILTER (WHERE status = 'success') AS last_success,
         MAX(sync_time) FILTER (WHERE status = 'error')   AS last_error
       FROM sync_logs WHERE portal_id = $1
-    `, [String(portalId)]);
+    `, [String(portalId)]).catch(() => ({ rows: [{}] }));
 
     res.json({
       logs:    result.rows,
