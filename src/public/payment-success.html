@@ -30,15 +30,14 @@
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 48px 40px;
-            max-width: 480px;
+            max-width: 450px;
             width: 100%;
             text-align: center;
         }
-        .logo { margin-bottom: 32px; }
-        .logo img { width: 56px; height: 56px; border-radius: 12px; margin-bottom: 12px; }
-        .logo h1 { color: var(--accent); font-size: 24px; font-weight: 600; }
+        .logo { margin-bottom: 20px; }
+        .logo img { width: 150px; height: 112px; border-radius: 12px; margin-bottom: 12px; }
         .icon { font-size: 64px; margin-bottom: 24px; }
-        h2 { font-size: 26px; font-weight: 600; margin-bottom: 12px; }
+        h1 { font-size: 26px; font-weight: 600; margin-bottom: 30px; }
         p { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
         .plan-badge {
             display: inline-block;
@@ -83,7 +82,7 @@
 <body>
     <div class="card" id="loadingState">
         <div class="logo">
-            <img src="/images/icon.webp" alt="SyncStation" onerror="this.style.display='none'">
+            <img src="/images/SyncStation-Centred@2x.webp" alt="SyncStation" onerror="this.style.display='none'">
             <h1>SyncStation</h1>
         </div>
         <div class="spinner"></div>
@@ -94,10 +93,8 @@
     <div class="card" id="successState" style="display:none">
         <div class="logo">
             <img src="/images/icon.webp" alt="SyncStation" onerror="this.style.display='none'">
-            <h1>SyncStation</h1>
         </div>
-        <div class="icon">✅</div>
-        <h2>Payment Successful!</h2>
+        <h1>Payment Successful!</h1>
         <p>Welcome to SyncStation</p>
         <div class="plan-badge" id="planName">Pro</div>
         <p>Your plan is now active. All your sync rules and property mappings are ready to go.</p>
