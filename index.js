@@ -17,6 +17,7 @@ const webhookRoutes  = require('./src/routes/webhooks');
 const notifRoutes    = require('./src/routes/notifications');
 const accountRoutes  = require('./src/routes/account');
 const paddleRoutes   = require('./src/routes/paddle');
+const chatbotRoutes  = require('./src/routes/chatbot');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -60,8 +61,12 @@ app.use('/api/users',   authRoutes);
 
 // ── BILLING ───────────────────────────────────────────────────────────────────
 
-app.use('/api/paddle',  paddleRoutes);
-app.use('/api/account', accountRoutes);
+app.use('/api/paddle',   paddleRoutes);
+app.use('/api/account',  accountRoutes);
+
+// ── CHATBOT ───────────────────────────────────────────────────────────────────
+
+app.use('/api/chatbot',  chatbotRoutes);
 
 // ── SYNCSTATION ROUTES ────────────────────────────────────────────────────────
 
@@ -145,7 +150,16 @@ async function startServer() {
         console.log(`⚙️  Settings:    https://portal.syncstation.app/settings`);
         console.log(`🔧 Admin:       https://portal.syncstation.app/admin/auth/login\n`);
 
-        // Start polling service for custom objects (Projects etc.)
+        // ── DAILY REPORT ──────────────────────────────────────────────────────
+        try {
+            const { scheduleDailyReport } = require('./src/services/dailyReport');
+            scheduleDailyReport();
+            console.log('[DailyReport] Scheduled for 07:00 UTC daily');
+        } catch (err) {
+            console.error('[DailyReport] Failed to schedule:', err.message);
+        }
+
+        // ── POLLING SERVICE ───────────────────────────────────────────────────
         try {
             const { runPollingCycle, initPollingTable } = require('./src/services/pollingService');
             initPollingTable()
