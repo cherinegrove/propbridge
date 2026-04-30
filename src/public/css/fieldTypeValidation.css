@@ -26,21 +26,21 @@
 }
 
 .validation-feedback.success {
-  background: #e8f5e9;
-  border-left: 4px solid #4caf50;
-  color: #2e7d32;
+background: rgba(63,208,137,0.1);
+  color: #3FD089;
+  border: 1px solid rgba(63,208,137,0.3);
 }
 
 .validation-feedback.error {
-  background: #ffebee;
-  border-left: 4px solid #f44336;
-  color: #c62828;
+  background: rgba(255,84,104,0.1);
+  color: #FF5468;
+  border: 1px solid rgba(255,84,104,0.3);
 }
 
 .validation-feedback.warning {
-  background: #fff3e0;
-  border-left: 4px solid #ff9800;
-  color: #e65100;
+  background: rgba(255,84,104,0.1);
+  color: #FF5468;
+  border: 1px solid rgba(255,84,104,0.3);
 }
 
 .validation-success {
@@ -137,15 +137,15 @@ select option[disabled] {
 
 /* Mapping row validation indicator */
 .mapping-row.invalid {
-  background: #ffebee;
-  border-left: 3px solid #f44336;
-  padding-left: 12px;
+  background: none;
+  border: none;
+  padding-left: 0px;
 }
 
 .mapping-row.valid {
-  background: #e8f5e9;
-  border-left: 3px solid #4caf50;
-  padding-left: 12px;
+  background: none;
+  border: none;
+  padding-left: 0px;
 }
 
 /* Save button states */
